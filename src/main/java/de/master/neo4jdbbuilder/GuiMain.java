@@ -154,6 +154,9 @@ public class GuiMain extends javax.swing.JPanel {
         overviewLIST = new javax.swing.JList<>();
         jButton4 = new javax.swing.JButton();
         jPanel5 = new javax.swing.JPanel();
+        progress_Info = new javax.swing.JLabel();
+        progress_STEP = new javax.swing.JLabel();
+        progress_STATE = new javax.swing.JLabel();
         jPanel6 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
@@ -326,15 +329,31 @@ public class GuiMain extends javax.swing.JPanel {
 
         jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Progress", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13))); // NOI18N
 
+        progress_Info.setText("Step:");
+
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(progress_Info)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(progress_STATE, javax.swing.GroupLayout.PREFERRED_SIZE, 488, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(progress_STEP, javax.swing.GroupLayout.PREFERRED_SIZE, 488, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
             jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 281, Short.MAX_VALUE)
+            .addGroup(jPanel5Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(progress_Info, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(progress_STEP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(progress_STATE, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(217, Short.MAX_VALUE))
         );
 
         jPanel6.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Generall Settings", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13))); // NOI18N
@@ -597,6 +616,7 @@ public class GuiMain extends javax.swing.JPanel {
             }
         });
 
+        // Integrating FEARS
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -722,13 +742,13 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JTextArea descriptionAREA;
     private javax.swing.JLabel downloadLABEL;
     private javax.swing.JTextField field_db_name;
-    private javax.swing.JList<Parser_File_Entry> filesLISTE;
+    public javax.swing.JList<Parser_File_Entry> filesLISTE;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
-    private javax.swing.JComboBox<Parser_Info> jComboBox1;
+    public javax.swing.JComboBox<Parser_Info> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -747,7 +767,10 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JLabel labelSOURCE;
-    private javax.swing.JList<Parser_File_Overview> overviewLIST;
+    public javax.swing.JList<Parser_File_Overview> overviewLIST;
     private javax.swing.JLabel pathLABEL;
+    private javax.swing.JLabel progress_Info;
+    public static javax.swing.JLabel progress_STATE;
+    private javax.swing.JLabel progress_STEP;
     // End of variables declaration//GEN-END:variables
 }

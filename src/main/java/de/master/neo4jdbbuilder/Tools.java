@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
@@ -989,6 +990,17 @@ public class Tools {
         startTime = System.nanoTime();
     }
 
+    public static double round(int a,int max, int places) {
+        double value = (double) a/max;
+        if (places < 0) {
+            throw new IllegalArgumentException();
+        }
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        return bd.doubleValue();
+    }
+
     /**
      * Method, stoping time.
      */
@@ -1002,10 +1014,12 @@ public class Tools {
      *
      * @param what additional text
      */
-    static public void printPassedTime(String what) {
+    static String printPassedTime(String what) {
         endTime();
-        System.out.format("solution Time : %f Seconds", seconds);
-        System.out.print(" " + what + "\n");
+//        System.out.format("solution Time : %f Seconds", seconds);
+        String res = " " + what + "\n";
+//        System.out.print(res);
+        return what + "\t" + seconds;
     }
 
     /**

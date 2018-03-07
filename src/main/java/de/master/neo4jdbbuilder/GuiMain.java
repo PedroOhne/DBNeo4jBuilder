@@ -6,16 +6,14 @@
 package de.master.neo4jdbbuilder;
 
 import java.awt.HeadlessException;
-import java.awt.event.ItemEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,15 +23,13 @@ import java.util.SortedSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
-import java.util.stream.Stream;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import javax.swing.SwingWorker;
 
 /**
  *
@@ -58,6 +54,7 @@ class ParserBoxInstanzFirst {
                 }
                 alle_parser.add(parser_Info);
             }
+            br.close();
         }
     }
 
@@ -71,29 +68,38 @@ class ParserBoxInstanzFirst {
 
 }
 
-final class GuiParentMain extends JFrame {
+final class GuiParentMain {
 
     public GuiParentMain(String title) throws HeadlessException {
-        super(title);
-        int height = 750;
-        int width = 1200;
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(width, height);
 
-        try {
-            GuiMain gm = new GuiMain();
-            this.add(gm);
-        } catch (MalformedURLException ex) {
-            Logger.getLogger(GuiParentMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                JFrame jf = new JFrame(title);
+                int height = 750;
+                int width = 1200;
+                jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                jf.setSize(width, height);
 
-        this.setLocationRelativeTo(this);
-        this.setResizable(false);
-        this.setVisible(true);
+                try {
+                    GuiMain gm = new GuiMain();
+                    jf.add(gm);
+                } catch (MalformedURLException ex) {
+                    Logger.getLogger(GuiParentMain.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                jf.setLocationRelativeTo(jf);
+                jf.setResizable(false);
+                jf.setVisible(true);
+            }
+        });
+
     }
 }
 
 public class GuiMain extends javax.swing.JPanel {
+
+    PreProcessorYCS_F pp_ycs;
 
     public void init() throws IOException {
         ParserBoxInstanzFirst pbif = new ParserBoxInstanzFirst();
@@ -116,12 +122,19 @@ public class GuiMain extends javax.swing.JPanel {
      * Creates new form GuiMain
      */
     public GuiMain() throws MalformedURLException {
-        initComponents();
-        try {
-            init();
-        } catch (IOException ex) {
-            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                initComponents();
+                try {
+                    init();
+                } catch (IOException ex) {
+                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+
     }
 
     /**
@@ -157,6 +170,8 @@ public class GuiMain extends javax.swing.JPanel {
         progress_Info = new javax.swing.JLabel();
         progress_STEP = new javax.swing.JLabel();
         progress_STATE = new javax.swing.JLabel();
+        jScrollPane5 = new javax.swing.JScrollPane();
+        progress_AREA = new javax.swing.JTextArea();
         jPanel6 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
@@ -331,6 +346,10 @@ public class GuiMain extends javax.swing.JPanel {
 
         progress_Info.setText("Step:");
 
+        progress_AREA.setColumns(20);
+        progress_AREA.setRows(5);
+        jScrollPane5.setViewportView(progress_AREA);
+
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
@@ -339,9 +358,10 @@ public class GuiMain extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(progress_Info)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(progress_STATE, javax.swing.GroupLayout.PREFERRED_SIZE, 488, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(progress_STEP, javax.swing.GroupLayout.PREFERRED_SIZE, 488, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jScrollPane5, javax.swing.GroupLayout.DEFAULT_SIZE, 488, Short.MAX_VALUE)
+                    .addComponent(progress_STATE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(progress_STEP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -353,7 +373,9 @@ public class GuiMain extends javax.swing.JPanel {
                     .addComponent(progress_STEP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(progress_STATE, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(217, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         jPanel6.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Generall Settings", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13))); // NOI18N
@@ -471,9 +493,9 @@ public class GuiMain extends javax.swing.JPanel {
                     .addComponent(jPanel2, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel3, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addGap(10, 10, 10)
-                .addGroup(NEWPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel5, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel4, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addGroup(NEWPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(jPanel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
@@ -550,6 +572,25 @@ public class GuiMain extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_field_db_nameActionPerformed
 
+    public class Worker extends SwingWorker<String, String> {
+
+        @Override
+        protected String doInBackground() throws Exception {
+            //This is what's called in the .execute method
+            for (int i = 0; i < 10; i++) {
+                //This sends the results to the .process method
+                publish(String.valueOf(i));
+                Thread.sleep(1000);
+            }
+            return null;
+        }
+
+        protected void process(List<String> item) {
+            //This updates the UI
+            progress_AREA.append(item + "\n");
+        }
+    }
+
     static String output_folder = "";
     static String download_folder = "";
     static String db_path = "";
@@ -573,95 +614,169 @@ public class GuiMain extends javax.swing.JPanel {
         HashSet<String> downloaded_zips = new HashSet<>();
         HashSet<String> files_usa = new HashSet<>();
 
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-                int size = model.getSize();
-                for (int i = 0; i < size; i++) {
-                    Parser_File_Overview elementAt = model.getElementAt(i);
-                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-                    for (Parser_File_Entry p_info : p_infos) {
-                        System.out.println(p_info.getUrl());
-                        String url = p_info.getUrl();
-                        String d_file = download_folder + Tools.OSValidator()
-                                + p_info.getName() + ".zip";
-                        if (p_info.getUrl().contains(Properties.canada_url_check)) {
-                            try {
-                                Tools.doDownload(p_info.getDownload_url(), d_file);
-                                downloaded_zips.add(d_file);
-                            } catch (IOException ex) {
-                            }
-                        } else if (p_info.getUrl().contains("info.mhra")) {
-                            try {
-                                PreProcessorYCS_F p_ycs = new PreProcessorYCS_F(f, p_info.getUrl(),
-                                        download_folder, output_folder);
-                            } catch (IOException ex) {
-                            }
-                        } else {
-                            String kind_year = p_info.getName();
-                            if (!kind_year.equals("")) {
-                                files_usa.add(kind_year.substring(2).toUpperCase());
-                                try {
-                                    p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
-                                    p_usa.extractFileAfterDownload(d_file, download_folder);
-                                } catch (IOException ex) {
-                                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                                }
-                            }
-                        }
-
-                    }
-                }
-            }
-        });
-
-        // Integrating FEARS
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                for (String downloaded_zip : files_usa) {
+        ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+        int size = model.getSize();
+        for (int i = 0; i < size; i++) {
+            Parser_File_Overview elementAt = model.getElementAt(i);
+            ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+            for (Parser_File_Entry p_info : p_infos) {
+                System.out.println(p_info.getUrl());
+                String url = p_info.getUrl();
+                String d_file = download_folder + Tools.OSValidator()
+                        + p_info.getName() + ".zip";
+                if (p_info.getUrl().contains(Properties.canada_url_check)) {
                     try {
-                        SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
-                                + Tools.OSValidator() + "ascii" + Tools.OSValidator(), downloaded_zip);
-                        if (downloaded_zip.equals("14Q2")) {
-                            p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 2);
-                        } else {
-                            p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 1);
+                        Tools.doDownload(p_info.getDownload_url(), d_file);
+                        downloaded_zips.add(d_file);
+                    } catch (IOException ex) {
+                    }
+                } else if (p_info.getUrl().contains("info.mhra")) {
+                    PreProcessorYCS_F pycs = new PreProcessorYCS_F(f, p_info.getUrl(),
+                            download_folder, output_folder);
+                    jButton4.addActionListener(new ActionListener() {
+                        @Override
+                        public void actionPerformed(ActionEvent arg0) {
+                            try {
+                                new WorkerYCS(pycs).execute();
+                            } catch (IOException ex) {
+                                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                            }
                         }
+                    });
+                    try {
+                        new WorkerYCS(pycs).execute();
                     } catch (IOException ex) {
                         Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    String kind_year = p_info.getName();
+                    if (!kind_year.equals("")) {
+                        files_usa.add(kind_year.substring(2).toUpperCase());
+                        try {
+                            p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
+                            p_usa.extractFileAfterDownload(d_file, download_folder);
+                        } catch (IOException ex) {
+                            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
                 }
             }
-        });
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                for (String downloaded_zip : downloaded_zips) {
-                    String unZipIt = Tools.unZipItCanada(downloaded_zip, download_folder);
-                    folder_canada_after_extraction = unZipIt;
-                }
-            }
-        });
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    PreProcessorCanada_F pfff = new PreProcessorCanada_F(f, download_folder, folder_canada_after_extraction);
-                } catch (IOException ex) {
-                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-
+        }
+        
+        
+//        SwingUtilities.invokeLater(new Runnable() {
+//            @Override
+//            public void run() {
+//                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+//                int size = model.getSize();
+//                for (int i = 0; i < size; i++) {
+//                    Parser_File_Overview elementAt = model.getElementAt(i);
+//                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+//                    for (Parser_File_Entry p_info : p_infos) {
+//                        System.out.println(p_info.getUrl());
+//                        String url = p_info.getUrl();
+//                        String d_file = download_folder + Tools.OSValidator()
+//                                + p_info.getName() + ".zip";
+//                        if (p_info.getUrl().contains(Properties.canada_url_check)) {
+//                            try {
+//                                Tools.doDownload(p_info.getDownload_url(), d_file);
+//                                downloaded_zips.add(d_file);
+//                            } catch (IOException ex) {
+//                            }
+//                        } else if (p_info.getUrl().contains("info.mhra")) {
+//                            pp_ycs = new PreProcessorYCS_F(f, p_info.getUrl(),
+//                                    download_folder, output_folder);
+//
+//                        } else {
+//                            String kind_year = p_info.getName();
+//                            if (!kind_year.equals("")) {
+//                                files_usa.add(kind_year.substring(2).toUpperCase());
+//                                try {
+//                                    p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
+//                                    p_usa.extractFileAfterDownload(d_file, download_folder);
+//                                } catch (IOException ex) {
+//                                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//                                }
+//                            }
+//                        }
+//
+//                    }
+//                }
+//            }
+//        });
+//        
+//        
+//        SwingUtilities.invokeLater(new Runnable() {
+//            @Override
+//            public void run() {
+//                for (String downloaded_zip : files_usa) {
+//                    try {
+//                        SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
+//                                + Tools.OSValidator() + "ascii" + Tools.OSValidator(), downloaded_zip);
+//                        if (downloaded_zip.equals("14Q2")) {
+//                            p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 2);
+//                        } else {
+//                            p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 1);
+//                        }
+//                    } catch (IOException ex) {
+//                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//                    } catch (InterruptedException ex) {
+//                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+//                }
+//            }
+//        });
+//        SwingUtilities.invokeLater(new Runnable() {
+//            @Override
+//            public void run() {
+//                for (String downloaded_zip : downloaded_zips) {
+//                    String unZipIt = Tools.unZipItCanada(downloaded_zip, download_folder);
+//                    folder_canada_after_extraction = unZipIt;
+//                }
+//            }
+//        });
+//
+//        SwingUtilities.invokeLater(new Runnable() {
+//            @Override
+//            public void run() {
+//                try {
+//                    PreProcessorCanada_F pfff = new PreProcessorCanada_F(f, download_folder, folder_canada_after_extraction);
+//                } catch (IOException ex) {
+//                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//                }
+//            }
+//        });
 
     }//GEN-LAST:event_jButton4ActionPerformed
 
+    public class WorkerYCS extends SwingWorker<String, String> {
+
+        PreProcessorYCS_F ycs;
+        HashMap<String, HashSet<String>> d_folders;
+
+        public WorkerYCS(PreProcessorYCS_F a) throws IOException {
+            this.ycs = a;
+            d_folders = ycs.startPreProcessingAll();
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+
+            //This is what's called in the .execute method
+            for (String string : d_folders.keySet()) {
+                String startIntegrateOneFolder = ycs.startIntegrateOneFolder(d_folders, string);
+                publish(startIntegrateOneFolder);
+            }
+            ycs.closeDB();
+            return null;
+        }
+
+        protected void process(List<String> item) {
+            //This updates the UI
+            progress_AREA.setText(item.get(item.size()-1)+"\n");
+        }
+
+    }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
 
@@ -764,11 +879,13 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
     private javax.swing.JScrollPane jScrollPane4;
+    private javax.swing.JScrollPane jScrollPane5;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JLabel labelSOURCE;
     public javax.swing.JList<Parser_File_Overview> overviewLIST;
     private javax.swing.JLabel pathLABEL;
+    private javax.swing.JTextArea progress_AREA;
     private javax.swing.JLabel progress_Info;
     public static javax.swing.JLabel progress_STATE;
     private javax.swing.JLabel progress_STEP;

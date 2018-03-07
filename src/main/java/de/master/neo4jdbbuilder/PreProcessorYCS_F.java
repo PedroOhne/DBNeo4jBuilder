@@ -46,52 +46,211 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
     HashMap<String, String[]> parsePropsInfo = new HashMap();
     HashMap<String, String[]> parsePropsSummary = new HashMap();
 
-    HashMap<String, HashSet<String>> drug_folder_toParse = new HashMap<>();
+    HashMap<String, Integer> get_reports;
+    HashMap<String, Integer> get_patients;
+    HashMap<String, Integer> get_drug;
+    HashMap<String, Integer> get_reactions;
+    HashMap<String, Integer> get_outcome;
+    static HashMap<String, Long> patient_for_link = new HashMap<>();
+
+    String regex_summary_N = "(N{1})(,{1})(.*)";
+    String regex_summary_Y = "(Y{1})(,{1})(.*)";
+    Pattern pattern_summary_N = Pattern.compile(regex_summary_N);
+    Pattern pattern_summary_Y = Pattern.compile(regex_summary_Y);
+    String präfix_ycs = Properties.präfix_ycs;
+    String meddra;
 
     GraphDatabaseService db;
 
     String pattern_property = "(\\d){1}(:\\x20){1}(.*)";
     int pattern_finisher;
+    static int counter_process = 0;
+    static int counter_max;
 
-    public PreProcessorYCS_F(File f, String jason_file, String download_folder, String output_folder) throws IOException {
-        createDir();
-        String link_file = doDownloadAndExtract(jason_file, download_folder);
-        HashMap<String, String> allLinks = getAllLinks(download_folder, link_file);
-        doDownloadOfAllandEXTRACTION(allLinks, download_folder);
+    String jason_file;
+    File db_file;
+    String download_folder;
+    String output_folder;
 
-        doParsingOfProperties();
-        HashMap<String, HashMap<String, Integer>> creatingAllPropsMapping = creatingAllPropsMapping();
-        for (Map.Entry<String, HashMap<String, Integer>> entry : creatingAllPropsMapping.entrySet()) {
-            System.out.println(entry.getKey() + " ...key AFTER");
-            for (Map.Entry<String, Integer> entry1 : entry.getValue().entrySet()) {
-                System.out.println(entry1 + "... entry AFTER");
-            }
-        }
-
-        GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
-        db = dbFactory.newEmbeddedDatabase(f);
-        createDrugParentInstanceYCard(creatingAllPropsMapping);
+    public PreProcessorYCS_F(File f, String jason_file, String download_folder, String output_folder) {
+        this.jason_file = jason_file;
+        this.db_file = f;
+        this.download_folder = download_folder;
+        this.output_folder = output_folder;
     }
 
-    void createDrugParentInstanceYCard(HashMap<String, HashMap<String, Integer>> map) throws FileNotFoundException, IOException {
+    HashMap<String, HashSet<String>> startPreProcessingAll() throws IOException {
+        System.out.println("starting");
+        String link_file = doDownloadAndExtract(jason_file, download_folder);
+        HashMap<String, String> allLinks = getAllLinks(download_folder, link_file);
+        HashMap<String, HashSet<String>> doDownloadOfAllandEXTRACTION = doDownloadOfAllandEXTRACTION(allLinks, download_folder);
+        counter_max = doDownloadOfAllandEXTRACTION.size();
 
-        String regex_summary_N = "(N{1})(,{1})(.*)";
-        String regex_summary_Y = "(Y{1})(,{1})(.*)";
-        Pattern pattern_summary_N = Pattern.compile(regex_summary_N);
-        Pattern pattern_summary_Y = Pattern.compile(regex_summary_Y);
+        doParsingOfProperties();
+        HashMap<String, HashMap<String, Integer>> map = creatingAllPropsMapping();
+        get_reports = map.get("Report");
+        get_patients = map.get("Patient");
+        get_drug = map.get("Drug");
+        get_reactions = map.get("Reaction");
+        get_outcome = map.get("Outcome");
+        meddra = getMeddraVersion(doDownloadOfAllandEXTRACTION);
+        GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
+        db = dbFactory.newEmbeddedDatabase(db_file);
+//        createDrugParentInstanceYCard(doDownloadOfAllandEXTRACTION);
+        return doDownloadOfAllandEXTRACTION;
+    }
+    
+    
 
-        HashMap<String, Integer> get_reports = map.get("Report");
-        HashMap<String, Integer> get_patients = map.get("Patient");
-        HashMap<String, Integer> get_drug = map.get("Drug");
-        HashMap<String, Integer> get_reactions = map.get("Reaction");
-        HashMap<String, Integer> get_outcome = map.get("Outcome");
+    String startIntegrateOneFolder(HashMap<String, HashSet<String>> drug_folder, String drug_name) throws FileNotFoundException, IOException {
 
-        String präfix_ycs = Properties.präfix_ycs;
+        String res = "";
+        try (Transaction tx = db.beginTx()) {
+            Tools.startTime();
+            HashMap<Integer, String> ordering_paths = new HashMap<>();
+            for (String string1 : drug_folder.get(drug_name)) {
+                if (string1.contains(Properties.ycs_basic_end_event)) {
+                    ordering_paths.put(2, string1);
+                }
+                if (string1.contains(Properties.ycs_basic_end_case)) {
+                    ordering_paths.put(0, string1);
+                }
+                if (string1.contains(Properties.ycs_basic_end_drug)) {
+                    ordering_paths.put(1, string1);
+                }
+            }
+
+            String reader_case = ordering_paths.get(0);
+            String reader_drug = ordering_paths.get(1);
+            String reader_event = ordering_paths.get(2);
+
+            BufferedReader br_case = new BufferedReader(new FileReader(reader_case));
+
+            Iterator<String> it = br_case.lines().iterator();
+            it.next(); // First Line only props...
+
+            while (it.hasNext()) {
+                String next = it.next();
+                String[] split_case = next.split(",");
+                String key = präfix_ycs + drug_name + split_case[0];
+                Node node_report = db.createNode(Entities.Report);
+                Node node_patient = db.createNode(Entities.Patient);
+                Node node_outcome = db.createNode(Entities.Outcome);
+                for (Map.Entry<String, Integer> entry : get_reports.entrySet()) {
+                    switch (entry.getValue()) {
+                        case -2:
+                            node_report.setProperty(entry.getKey(), key);
+                            break;
+                        case -1:
+                            node_report.setProperty(entry.getKey(), "n/a");
+                            break;
+                        default:
+                            node_report.setProperty(entry.getKey(), split_case[entry.getValue()]);
+                            break;
+                    }
+                }
+
+                for (Map.Entry<String, Integer> entry : get_patients.entrySet()) {
+                    switch (entry.getValue()) {
+                        case -2:
+                            node_patient.setProperty(entry.getKey(), key);
+                            break;
+                        case -1:
+                            node_patient.setProperty(entry.getKey(), "n/a");
+                            break;
+                        default:
+                            node_patient.setProperty(entry.getKey(), split_case[entry.getValue()]);
+                            break;
+                    }
+                }
+
+                for (Map.Entry<String, Integer> entry : get_outcome.entrySet()) {
+                    switch (entry.getValue()) {
+                        case -1:
+                            node_outcome.setProperty(entry.getKey(), "n/a");
+                            break;
+                        default:
+                            node_outcome.setProperty(entry.getKey(), split_case[entry.getValue()]);
+                            break;
+                    }
+                }
+                node_report.createRelationshipTo(node_patient, EntitiesRelationships.DESCRIBES_RdP);
+                node_patient.createRelationshipTo(node_outcome, EntitiesRelationships.HAS_PhO);
+                patient_for_link.put(key, node_patient.getId());
+            }
+            br_case.close();
+
+            br_case = new BufferedReader(new FileReader(reader_drug));
+            it = br_case.lines().iterator();
+            it.next(); // First Line only props...
+
+            while (it.hasNext()) {
+                String next = it.next();
+                String[] split_drug = next.split(",");
+                String key = präfix_ycs + drug_name + split_drug[0];
+                Node node_drug = db.createNode(Entities.Drug);
+                for (Map.Entry<String, Integer> entry : get_drug.entrySet()) {
+                    switch (entry.getValue()) {
+                        case -2:
+                            node_drug.setProperty(entry.getKey(), drug_name);
+                            break;
+                        case -1:
+                            node_drug.setProperty(entry.getKey(), "n/a");
+                            break;
+                        default:
+                            node_drug.setProperty(entry.getKey(), split_drug[entry.getValue()]);
+                            break;
+                    }
+                }
+                Long get_id = patient_for_link.get(key);
+                if (get_id != null) {
+                    db.getNodeById(get_id).createRelationshipTo(node_drug, EntitiesRelationships.TAKES_PtD);
+                }
+            }
+
+            br_case = new BufferedReader(new FileReader(reader_event));
+            it = br_case.lines().iterator();
+            it.next(); // First Line only props...
+            while (it.hasNext()) {
+                String next = it.next();
+                String[] split_event = next.split(",");
+                String key = präfix_ycs + drug_name + split_event[0];
+                Node node_reaction = db.createNode(Entities.Reaction);
+                for (Map.Entry<String, Integer> entry : get_reactions.entrySet()) {
+                    switch (entry.getValue()) {
+                        case 100:
+                            node_reaction.setProperty(entry.getKey(), meddra);
+                            break;
+                        case -1:
+                            node_reaction.setProperty(entry.getKey(), "n/a");
+                            break;
+                        default:
+                            node_reaction.setProperty(entry.getKey(), split_event[entry.getValue()]);
+                            break;
+                    }
+                }
+                Long get_id = patient_for_link.get(key);
+                if (get_id != null) {
+                    db.getNodeById(get_id).createRelationshipTo(node_reaction, EntitiesRelationships.PRESENTS_PpR);
+                }
+            }
+            br_case.close();
+            patient_for_link.clear();
+            tx.success();
+            counter_process++;
+            return counter_process + "/" + counter_max + "\t" + Tools.round(counter_process, counter_max, 3) + " %";
+        }
+    }
+    
+    void closeDB(){
+        db.shutdown();
+    }
+
+    String getMeddraVersion(HashMap<String, HashSet<String>> drug_folder) throws IOException {
         String meddra = "";
-
-        for (String string : drug_folder_toParse.keySet()) {
+        for (String string : drug_folder.keySet()) {
             String drug_name = string;
-            for (String string1 : drug_folder_toParse.get(drug_name)) {
+            for (String string1 : drug_folder.get(drug_name)) {
                 // INFO file..
                 if (string1.contains(Properties.ycs_basic_end_info)) {
                     BufferedReader br = new BufferedReader(new FileReader(string1));
@@ -110,154 +269,11 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
                 }
             }
         }
+        return meddra;
+    }
 
-        for (String string : drug_folder_toParse.keySet()) {
-            try (Transaction tx = db.beginTx()) {
-                Tools.startTime();
-                String drug_name = string; // MEDIKAMENT_NAME  von Yellow Card Schema.
-
-                HashMap<Integer, String> ordering_paths = new HashMap<>();
-                for (String string1 : drug_folder_toParse.get(drug_name)) {
-                    if (string1.contains(Properties.ycs_basic_end_event)) {
-                        ordering_paths.put(2, string1);
-                    }
-                    if (string1.contains(Properties.ycs_basic_end_case)) {
-                        ordering_paths.put(0, string1);
-                    }
-                    if (string1.contains(Properties.ycs_basic_end_drug)) {
-                        ordering_paths.put(1, string1);
-                    }
-                }
-
-                String reader_case = ordering_paths.get(0);
-                String reader_drug = ordering_paths.get(1);
-                String reader_event = ordering_paths.get(2);
-
-                BufferedReader br_case = new BufferedReader(new FileReader(reader_case));
-                HashMap<String, Long> patient_for_link = new HashMap<>();
-
-                Iterator<String> it = br_case.lines().iterator();
-                it.next(); // First Line only props...
-
-                while (it.hasNext()) {
-                    String next = it.next();
-                    String[] split_case = next.split(",");
-                    String key = präfix_ycs + drug_name + split_case[0];
-                    Node node_report = db.createNode(Entities.Report);
-                    Node node_patient = db.createNode(Entities.Patient);
-                    Node node_outcome = db.createNode(Entities.Outcome);
-                    for (Map.Entry<String, Integer> entry : get_reports.entrySet()) {
-                        switch (entry.getValue()) {
-                            case -2:
-                                node_report.setProperty(entry.getKey(), key);
-                                break;
-                            case -1:
-                                node_report.setProperty(entry.getKey(), "n/a");
-                                break;
-                            default:
-                                node_report.setProperty(entry.getKey(), split_case[entry.getValue()]);
-                                break;
-                        }
-                    }
-
-                    for (Map.Entry<String, Integer> entry : get_patients.entrySet()) {
-                        switch (entry.getValue()) {
-                            case -2:
-                                node_patient.setProperty(entry.getKey(), key);
-                                break;
-                            case -1:
-                                node_patient.setProperty(entry.getKey(), "n/a");
-                                break;
-                            default:
-                                node_patient.setProperty(entry.getKey(), split_case[entry.getValue()]);
-                                break;
-                        }
-                    }
-
-                    for (Map.Entry<String, Integer> entry : get_outcome.entrySet()) {
-                        switch (entry.getValue()) {
-                            case -1:
-                                node_outcome.setProperty(entry.getKey(), "n/a");
-                                break;
-                            default:
-                                node_outcome.setProperty(entry.getKey(), split_case[entry.getValue()]);
-                                break;
-                        }
-                    }
-                    node_patient.createRelationshipTo(node_report, EntitiesRelationships.PRESENTS_PpR);
-                    node_patient.createRelationshipTo(node_outcome, EntitiesRelationships.HAS_PhO);
-                    patient_for_link.put(key, node_patient.getId());
-                }
-                br_case.close();
-
-                br_case = new BufferedReader(new FileReader(reader_drug));
-                it = br_case.lines().iterator();
-                it.next(); // First Line only props...
-                while (it.hasNext()) {
-                    String next = it.next();
-                    String[] split_drug = next.split(",");
-                    String key = präfix_ycs + drug_name + split_drug[0];
-                    Node node_drug = db.createNode(Entities.Drug);
-                    for (Map.Entry<String, Integer> entry : get_drug.entrySet()) {
-                        switch (entry.getValue()) {
-                            case -2:
-                                node_drug.setProperty(entry.getKey(), drug_name);
-                                break;
-                            case -1:
-                                node_drug.setProperty(entry.getKey(), "n/a");
-                                break;
-                            default:
-                                node_drug.setProperty(entry.getKey(), split_drug[entry.getValue()]);
-                                break;
-                        }
-                    }
-                    Long get_id = patient_for_link.get(key);
-                    if (get_id != null) {
-                        db.getNodeById(get_id).createRelationshipTo(node_drug, EntitiesRelationships.TAKES_PtD);
-                    }
-                }
-
-                br_case = new BufferedReader(new FileReader(reader_event));
-                it = br_case.lines().iterator();
-                it.next(); // First Line only props...
-                while (it.hasNext()) {
-                    String next = it.next();
-                    String[] split_event = next.split(",");
-                    String key = präfix_ycs + drug_name + split_event[0];
-                    Node node_reaction = db.createNode(Entities.Reaction);
-                    for (Map.Entry<String, Integer> entry : get_reactions.entrySet()) {
-                        switch (entry.getValue()) {
-                            case 100:
-                                node_reaction.setProperty(entry.getKey(), meddra);
-                                break;
-                            case -1:
-                                node_reaction.setProperty(entry.getKey(), "n/a");
-                                break;
-                            default:
-                                node_reaction.setProperty(entry.getKey(), split_event[entry.getValue()]);
-                                break;
-                        }
-                    }
-                    Long get_id = patient_for_link.get(key);
-                    if (get_id != null) {
-                        db.getNodeById(get_id).createRelationshipTo(node_reaction, EntitiesRelationships.PRESENTS_PpR);
-                    }
-                }
-                br_case.close();
-                patient_for_link.clear();
-                tx.success();
-                Tools.printPassedTime(drug_name);
-            }
-//
-        }
-
-        System.out.println(
-                "#### 1/2 Step FINISHED ####");
-
-        System.out.println(
-                "#### LINKING PHASE OVER ####");
-
-        db.shutdown();
+    HashMap<String, Integer> getMapFor(String mapping_for, HashMap<String, HashMap<String, Integer>> map) {
+        return map.get(mapping_for);
     }
 
     HashMap<Integer, String> parsePropGenerall(Iterator<String> iterator) {
@@ -283,9 +299,6 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
     void doParsingOfProperties() throws IOException {
         drug_case_properties = parseProps(Properties.ycs_prop_case);
         drug_event_properties = parseProps(Properties.ycs_prop_event);
-        for (String drug_event_property : drug_event_properties) {
-            System.out.println(drug_event_property);
-        }
         drug_drug_properties = parseProps(Properties.ycs_prop_drug);
         drug_info_properties = parseProps(Properties.ycs_prop_info);
         drug_summary_properties = parseProps(Properties.ycs_prop_summary);
@@ -398,15 +411,12 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
 
     String[] parseProps(String what_to_parse) throws FileNotFoundException, IOException {
         String[] props_array = null;
-        int flag = 0;
-        System.out.println(rel_path_props);
         BufferedReader br = new BufferedReader(new FileReader(rel_path_props));
         Iterator<String> iterator = br.lines().iterator();
-        flag = 0;
+        int flag = 0;
         while (iterator.hasNext()) {
             String line = iterator.next();
             if (line.startsWith(what_to_parse)) {
-                System.out.println(line);
                 flag++;
             }
             if (flag == 2) {
@@ -423,8 +433,9 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
         return props_array;
     }
 
-    void doDownloadOfAllandEXTRACTION(HashMap<String, String> all_links, String download_path) throws IOException {
+    HashMap<String, HashSet<String>> doDownloadOfAllandEXTRACTION(HashMap<String, String> all_links, String download_path) throws IOException {
 
+        HashMap<String, HashSet<String>> drug_folder = new HashMap<>();
         for (Map.Entry<String, String> entry : all_links.entrySet()) {
             String name = entry.getKey().replaceAll("\\/", "_");
             String createDir = createDir(download_path, name);
@@ -443,12 +454,11 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
             all_file_to_parse.add(createDir + symb + Properties.ycs_basic_beginn + relative_ID + Properties.ycs_basic_end_case);
             all_file_to_parse.add(createDir + symb + Properties.ycs_basic_beginn + relative_ID + Properties.ycs_basic_end_info);
             all_file_to_parse.add(createDir + symb + Properties.ycs_basic_beginn + relative_ID + Properties.ycs_basic_end_summary);
-            drug_folder_toParse.put(name, all_file_to_parse);
+            drug_folder.put(name, all_file_to_parse);
         }
         String summary = "mhra_idap_csv_help.txt";
         rel_path_props = rel_path_props + Tools.OSValidator() + summary;
-        System.out.println(rel_path_props);
-
+        return drug_folder;
     }
 
     /**
@@ -476,7 +486,6 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
                 m_l = p.matcher(next_line_link_id);
                 if (m_l.find()) {
                     String link_id = m_l.group(5);
-                    System.out.println("\t FOUND" +link_id + " -"+m.group());
                     all_drugname_to_link.put(link_id, drug_name);
                 }
             }

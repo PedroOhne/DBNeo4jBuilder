@@ -499,7 +499,7 @@ public class GuiMain extends javax.swing.JPanel {
                 .addContainerGap())
         );
 
-        jTabbedPane1.addTab("New Database", NEWPanel);
+        jTabbedPane1.addTab("Management -Database-", NEWPanel);
 
         javax.swing.GroupLayout SEARCHPanelLayout = new javax.swing.GroupLayout(SEARCHPanel);
         SEARCHPanel.setLayout(SEARCHPanelLayout);
@@ -612,7 +612,7 @@ public class GuiMain extends javax.swing.JPanel {
         PreProcessorUS_F p_usa = new PreProcessorUS_F();
 
         HashSet<String> downloaded_zips = new HashSet<>();
-        HashSet<String> files_usa = new HashSet<>();
+        ArrayList<String> files_usa = new ArrayList<>();
 
         ListModel<Parser_File_Overview> model = overviewLIST.getModel();
         int size = model.getSize();
@@ -633,21 +633,12 @@ public class GuiMain extends javax.swing.JPanel {
                 } else if (p_info.getUrl().contains("info.mhra")) {
                     PreProcessorYCS_F pycs = new PreProcessorYCS_F(f, p_info.getUrl(),
                             download_folder, output_folder);
-                    jButton4.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent arg0) {
-                            try {
-                                new WorkerYCS(pycs).execute();
-                            } catch (IOException ex) {
-                                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                        }
-                    });
                     try {
                         new WorkerYCS(pycs).execute();
                     } catch (IOException ex) {
                         Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
                     }
+
                 } else {
                     String kind_year = p_info.getName();
                     if (!kind_year.equals("")) {
@@ -662,8 +653,21 @@ public class GuiMain extends javax.swing.JPanel {
                 }
             }
         }
-        
-        
+
+        System.out.println(files_usa.size());
+
+        try {
+            WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+            w_usa.execute();
+        } catch (IOException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (Exception ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        System.out.println("END.");
+
+//
 //        SwingUtilities.invokeLater(new Runnable() {
 //            @Override
 //            public void run() {
@@ -704,28 +708,6 @@ public class GuiMain extends javax.swing.JPanel {
 //                }
 //            }
 //        });
-//        
-//        
-//        SwingUtilities.invokeLater(new Runnable() {
-//            @Override
-//            public void run() {
-//                for (String downloaded_zip : files_usa) {
-//                    try {
-//                        SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
-//                                + Tools.OSValidator() + "ascii" + Tools.OSValidator(), downloaded_zip);
-//                        if (downloaded_zip.equals("14Q2")) {
-//                            p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 2);
-//                        } else {
-//                            p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 1);
-//                        }
-//                    } catch (IOException ex) {
-//                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//                    } catch (InterruptedException ex) {
-//                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-//                }
-//            }
-//        });
 //        SwingUtilities.invokeLater(new Runnable() {
 //            @Override
 //            public void run() {
@@ -748,6 +730,66 @@ public class GuiMain extends javax.swing.JPanel {
 //        });
 
     }//GEN-LAST:event_jButton4ActionPerformed
+
+    public class WorkerUSA extends SwingWorker<String, String> {
+
+        PreProcessorUS_F p_usa;
+        ArrayList<String> files_usa;
+        File f;
+
+        public WorkerUSA(PreProcessorUS_F a, ArrayList<String> filess, File f) throws IOException {
+            this.p_usa = a;
+            this.files_usa = filess;
+            this.f = f;
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+
+            String next = files_usa.get(0);
+            SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
+                    + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
+
+            if (next.equals("14Q2")) {
+                p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 2);
+                HashSet<USgenerellNode> receiveMapInternNodes = p_usa.receiveMapInternNodes();
+                Iterator<USgenerellNode> iterator1 = receiveMapInternNodes.iterator();
+                while (iterator1.hasNext()) {
+                    String ProcessOneNode = p_usa.ProcessOneNode(iterator1.next());
+                    publish(ProcessOneNode);
+                }
+                files_usa.remove(next);
+                if (!files_usa.isEmpty()) {
+                    publish("DONE.");
+                    WorkerUSA wUSA = new WorkerUSA(p_usa, files_usa, f);
+                    wUSA.execute();
+                }
+            } else {
+                p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 1);
+                HashSet<USgenerellNode> receiveMapInternNodes = p_usa.receiveMapInternNodes();
+                Iterator<USgenerellNode> iterator1 = receiveMapInternNodes.iterator();
+                while (iterator1.hasNext()) {
+                    String ProcessOneNode = p_usa.ProcessOneNode(iterator1.next());
+                    publish(ProcessOneNode);
+                }
+                files_usa.remove(next);
+                if (!files_usa.isEmpty()) {
+                    publish("DONE.");
+                    WorkerUSA wUSA = new WorkerUSA(p_usa, files_usa, f);
+                    wUSA.execute();
+                }
+            }
+            p_usa.closeDB();
+            return null;
+        }
+
+        @Override
+        protected void process(List<String> item
+        ) {
+            progress_AREA.setText(item.get(item.size() - 1) + "\n");
+        }
+
+    }
 
     public class WorkerYCS extends SwingWorker<String, String> {
 
@@ -773,9 +815,8 @@ public class GuiMain extends javax.swing.JPanel {
 
         protected void process(List<String> item) {
             //This updates the UI
-            progress_AREA.setText(item.get(item.size()-1)+"\n");
+            progress_AREA.setText(item.get(item.size() - 1) + "\n");
         }
-
     }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed

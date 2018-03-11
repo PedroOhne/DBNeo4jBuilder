@@ -990,14 +990,24 @@ public class Tools {
         startTime = System.nanoTime();
     }
 
-    public static double round(int a,int max, int places) {
-        double value = (double) a/max;
+    public static double round(int a, int max, int places) {
+        double value = (double) a / max;
         if (places < 0) {
             throw new IllegalArgumentException();
         }
 
         BigDecimal bd = new BigDecimal(value);
         bd = bd.setScale(places, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+        return bd.doubleValue();
+    }
+
+    public static double roundDouble(double value, int places) {
+        if (places < 0) {
+            throw new IllegalArgumentException();
+        }
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
         return bd.doubleValue();
     }
 
@@ -1292,7 +1302,11 @@ public class Tools {
         long size = fos.getChannel().size();
 
         System.out.println(output + " --- " + size);
-        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        if (new File(output).exists()) {
+
+        } else {
+            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        }
     }
 
     static HashMap<String, HashMap<String, Integer>> parsePropertiesYCS(String dir) {

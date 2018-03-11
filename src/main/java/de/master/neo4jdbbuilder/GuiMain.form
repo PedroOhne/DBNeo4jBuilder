@@ -50,8 +50,8 @@
           </Properties>
           <Constraints>
             <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout" value="org.netbeans.modules.form.compat2.layouts.support.JTabbedPaneSupportLayout$JTabbedPaneConstraintsDescription">
-              <JTabbedPaneConstraints tabName="New Database">
-                <Property name="tabTitle" type="java.lang.String" value="New Database"/>
+              <JTabbedPaneConstraints tabName="Management -Database-">
+                <Property name="tabTitle" type="java.lang.String" value="Management -Database-"/>
               </JTabbedPaneConstraints>
             </Constraint>
           </Constraints>

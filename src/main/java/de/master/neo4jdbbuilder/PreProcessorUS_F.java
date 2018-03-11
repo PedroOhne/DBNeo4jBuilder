@@ -49,6 +49,8 @@ public final class PreProcessorUS_F implements Properties {
     private String[] property_arry_outcomes;
     private String[] property_arry_demos;
 
+    static HashMap<String, HashMap<String, Integer>> alls_config_props;
+
     static HashMap<String, String[]> fusion_standard_properties = new HashMap<>();
 
     private static HashMap<Integer, String[]> all_properties_contained = new HashMap<>();
@@ -75,10 +77,13 @@ public final class PreProcessorUS_F implements Properties {
     public void PreProcessorUS_F_14Q2(File f,
             SortedSet<String> files_names, int option) throws IOException, InterruptedException {
 
+        clearAllMaps();
         GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
         String symb = Tools.OSValidator();
         String rel_path = basic_path_database + symb + basic_path_us + symb;
         db = dbFactory.newEmbeddedDatabase(f);
+
+        System.out.println("STARTING ...");
 
         String drug = "";
         String indi = "";
@@ -105,10 +110,16 @@ public final class PreProcessorUS_F implements Properties {
         property_arry_report = initialize(new File(source).getAbsolutePath(), omegaREPORSOURCES);
         property_arry_outcomes = initialize(new File(outc).getAbsolutePath(), omegaOUTCOMES);
         reUnion(symb, demo);
-        HashMap<String, HashMap<String, Integer>> alls = Tools.ConfigParserStructureGenerall(files_names, option);
-        createDATABASE(alls);
-        db.shutdown();
-        clearAllMaps();
+        alls_config_props = Tools.ConfigParserStructureGenerall(files_names, option);
+        max = alls.size();
+        counter = 0;
+//        createDATABASE(alls);
+//        db.shutdown();
+//        clearAllMaps();
+    }
+
+    HashSet<USgenerellNode> receiveMapInternNodes() {
+        return alls;
     }
 
     public void clearAllMaps() {
@@ -125,8 +136,8 @@ public final class PreProcessorUS_F implements Properties {
     void downloadFileToDestination(String url, String output_path) throws IOException {
         Tools.doDownload(url, output_path);
     }
-    
-    void extractFileAfterDownload(String zipFile, String outputFolder){
+
+    void extractFileAfterDownload(String zipFile, String outputFolder) {
         Tools.doExtraction(zipFile, outputFolder);
     }
 
@@ -168,16 +179,15 @@ public final class PreProcessorUS_F implements Properties {
         }
 //        db.shutdown();
     }
+    
+    static int counter = 0;
+    static int max;
 
-    public void createDATABASE(HashMap<String, HashMap<String, Integer>> theta_props) throws IOException, InterruptedException {
-
-        Iterator<USgenerellNode> iterator = alls.iterator();
-
-        while (iterator.hasNext()) {
-            USgenerellNode next = iterator.next();
-            USThread_F_14Q2 bt = new USThread_F_14Q2(next, theta_props, db);
-            bt.run();
-        }
+    public String ProcessOneNode(USgenerellNode node) {
+        USThread_F_14Q2 thread = new USThread_F_14Q2(node, alls_config_props, db);
+        thread.run();
+        counter++;
+        return counter +"/" + max+ "\t\t" + Tools.round(counter, max, 3) + "  %";
     }
 
     public void reUnion(String symb, String Demographic) throws IOException {

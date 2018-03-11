@@ -46,6 +46,7 @@ public class Parser_File_Overview {
                 } else {
                     Double d = Double.parseDouble(double_unformatted);
                     dd = dd + d;
+                    dd = Tools.roundDouble(dd, 2);
                 }
             } 
         }

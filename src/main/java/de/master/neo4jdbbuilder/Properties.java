@@ -25,6 +25,8 @@ public interface Properties {
     String präfix_can = "CAN_";
     String config_path_dir = "config";
     String config_path_file = "c_all.txt";
+    
+    String config_redundancy_file = "redundancies.txt";
   
     
 

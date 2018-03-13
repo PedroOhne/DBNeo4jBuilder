@@ -475,14 +475,12 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
      */
     HashMap<String, String> getAllLinks(String path, String links_path) throws FileNotFoundException {
         HashMap<String, String> all_drugname_to_link = new HashMap<>();
-        System.out.println("Set Up Phase..");
         BufferedReader bf = new BufferedReader(new FileReader(links_path));
         Iterator<String> iterator = bf.lines().iterator();
         Pattern p = Pattern.compile(drug_name_pattern);
         Pattern p_l = Pattern.compile(drug_link_pattern);
         Matcher m;
         Matcher m_l;
-        System.out.println("FIRST INSTANCE");
         while (iterator.hasNext()) {
             String linke = iterator.next();
             m = p_l.matcher(linke);

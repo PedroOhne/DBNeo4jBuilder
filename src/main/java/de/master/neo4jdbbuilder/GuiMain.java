@@ -172,6 +172,7 @@ public class GuiMain extends javax.swing.JPanel {
         jScrollPane5 = new javax.swing.JScrollPane();
         progress_AREA = new javax.swing.JTextArea();
         redundancyBUTTON = new javax.swing.JButton();
+        read_redun_BUTTON = new javax.swing.JButton();
         jPanel6 = new javax.swing.JPanel();
         jLabel2 = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
@@ -370,6 +371,13 @@ public class GuiMain extends javax.swing.JPanel {
             }
         });
 
+        read_redun_BUTTON.setText("Delete Duplicates");
+        read_redun_BUTTON.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                read_redun_BUTTONActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel5Layout = new javax.swing.GroupLayout(jPanel5);
         jPanel5.setLayout(jPanel5Layout);
         jPanel5Layout.setHorizontalGroup(
@@ -381,7 +389,8 @@ public class GuiMain extends javax.swing.JPanel {
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addComponent(redundancyBUTTON)
-                        .addGap(0, 0, Short.MAX_VALUE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(read_redun_BUTTON))
                     .addGroup(jPanel5Layout.createSequentialGroup()
                         .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 488, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -403,7 +412,9 @@ public class GuiMain extends javax.swing.JPanel {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(progress_STATE, javax.swing.GroupLayout.PREFERRED_SIZE, 20, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(redundancyBUTTON))
+                .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(redundancyBUTTON)
+                    .addComponent(read_redun_BUTTON)))
         );
 
         jPanel6.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Generall Settings", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13))); // NOI18N
@@ -822,9 +833,23 @@ public class GuiMain extends javax.swing.JPanel {
         } catch (IOException ex) {
             Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-
     }//GEN-LAST:event_redundancyBUTTONActionPerformed
+
+    private void read_redun_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_read_redun_BUTTONActionPerformed
+        jTextArea1.setText("");
+        try {
+            // TODO add your handling code here:
+            RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
+            HashSet<Long> readFileRed = red_checker.readFileRed();
+            for (Long checkDouble : readFileRed) {
+                progress_AREA.append(checkDouble + "\n");
+            }
+            red_checker.removeDoubles(readFileRed);
+            
+        } catch (IOException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_read_redun_BUTTONActionPerformed
 
     /**
      * SwingWorker for Integrating Canada Data Set.
@@ -1083,6 +1108,7 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JLabel progress_Info;
     public static javax.swing.JLabel progress_STATE;
     private javax.swing.JLabel progress_STEP;
+    private javax.swing.JButton read_redun_BUTTON;
     private javax.swing.JButton redundancyBUTTON;
     // End of variables declaration//GEN-END:variables
 }

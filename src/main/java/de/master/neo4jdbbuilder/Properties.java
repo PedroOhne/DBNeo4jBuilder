@@ -67,7 +67,7 @@ public interface Properties {
     String uk_path = "CopyofFinalrepository_DLP30Jun2015_2.xls";
     String db_name_uk = "DB_EU_MEDICINE_AGENCY";
     String basic_path_uk = "UK";
-    String unique_id_uk = "UK";
+    String unique_id_uk = "YCS";
     String uk_drug_id = "drug_id";
     String uk_adr_id = "adr_id";
 
@@ -154,7 +154,7 @@ public interface Properties {
     
     String canada_download_url = "https://www.canada.ca/content/dam/hc-sc/migration/hc-sc/"
             + "dhp-mps/alt_formats/zip/medeff/databasdon/cvponline_extract_20170930.zip";
-    
+   
     String canada_property_url = "https://www.canada.ca/en/health-canada/"
             + "services/drugs-health-products/medeffect-canada/adverse-reaction-database/"
             + "canada-vigilance-adverse-reaction-online-database-data-structures.html";

@@ -59,12 +59,44 @@ public final class PreProcessorCanada_F implements Properties {
     static HashMap<String, HashMap<String, Integer>> my_props = new HashMap<>();
     static HashMap<Integer, String[]> all_canadian_props = new HashMap<>();
 
-    public PreProcessorCanada_F(File f, String download_path, String unzipped_folder) throws IOException {
+    static int counter_process = 0;
+    static int counter_max = 0;
+
+    static String download_paath = "";
+    static String unzipped_file = "";
+
+    public PreProcessorCanada_F(String download_path, String unzipped_folder) throws IOException {
+        my_props = createPropertyMap();
+        this.download_paath = download_path;
+        this.unzipped_file = unzipped_folder;
+    }
+
+    public void clearAllMaps() {
+        all_entries.clear();
+        drug_prd_ALL.clear();
+        createD_Product_Nodes.clear();
+        drug_product_IDs.clear();
+        reports_IDs.clear();
+        links_IDs.clear();
+        reactions_IDs.clear();
+        report_drug_IDs.clear();
+        report_drug_indication_IDs.clear();
+        drug_product_ingri_IDs.clear();
+    }
+
+    public void closeDB() {
+        if (db != null) {
+            db.shutdown();
+        }
+    }
+
+    HashSet<CanadaNode> returnAllEntries() {
+        return all_entries;
+    }
+
+    public void InitFileWriting(File f) {
         GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
         db = dbFactory.newEmbeddedDatabase(f);
-        my_props = createPropertyMap();
-        CreatePreprocessingCanada(download_path, unzipped_folder);
-        createDATABASE();
     }
 
     public HashMap<String, HashMap<String, Integer>> createPropertyMap() throws FileNotFoundException, IOException {
@@ -406,12 +438,21 @@ public final class PreProcessorCanada_F implements Properties {
      *
      * @throws IOException
      */
-    public void CreatePreprocessingCanada(String download_path, String unzipped_folder) throws IOException {
-
+    public HashSet<CanadaNode> CreatePreprocessingCanada() throws IOException {
         // Retrieve download directory, where the txt files are.
         String symb = Tools.OSValidator();
-        String path = download_path + symb + unzipped_folder;
+        String path = download_paath + symb + unzipped_file;
         Stream<Path> list = Files.list(Paths.get(path));
+        String key = "cvponline";
+        for (Object object : list.toArray()) {
+            Path a = (Path) object;
+            String filename = a.getFileName().toString();
+            if (filename.contains(key)) {
+                path = path + symb + filename + symb;
+            }
+        }
+
+        list = Files.list(Paths.get(path));
 
         // Initialise Report/Reaction/Drug/DrugIndication Maps
         for (Object object : list.toArray()) {
@@ -431,6 +472,19 @@ public final class PreProcessorCanada_F implements Properties {
         // Creating "Nodes" containing all relevant connections.
         HashMap<String, CanadaReportDrugNode> createReportDrugNodes = createReportDrugNodes(report_drug_IDs, report_drug_indication_IDs);
         all_entries = createFinalNodes(reports_IDs, reactions_IDs, createReportDrugNodes);
+        counter_max = all_entries.size();
+        return all_entries;
+    }
+
+    public String processOneNode(CanadaNode c_node) {
+        CanadaThread_F can_thread = new CanadaThread_F(c_node, my_props, db);
+        can_thread.run();
+        counter_process++;
+        return counter_process + "/" + counter_max + "\t\t" + Tools.round(counter_process, counter_max, 3) + " %";
+    }
+
+    public static HashSet<CanadaNode> getAll_entries() {
+        return all_entries;
     }
 
     final void createDATABASE() {
@@ -560,7 +614,6 @@ public final class PreProcessorCanada_F implements Properties {
     /**
      * Section -> Methods/Functions which are not needed anymore.
      */
-    
     public void ConnectDRUGproducts_to_ReportDRUG() {
         // LONG..ID..Indication   <->   DRUG_PRODCUT_ID ....  
         // First Step.hj

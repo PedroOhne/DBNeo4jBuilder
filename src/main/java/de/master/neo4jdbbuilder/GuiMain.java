@@ -6,8 +6,6 @@
 package de.master.neo4jdbbuilder;
 
 import java.awt.HeadlessException;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -166,6 +164,7 @@ public class GuiMain extends javax.swing.JPanel {
         jScrollPane4 = new javax.swing.JScrollPane();
         overviewLIST = new javax.swing.JList<>();
         jButton4 = new javax.swing.JButton();
+        jButton6 = new javax.swing.JButton();
         jPanel5 = new javax.swing.JPanel();
         progress_Info = new javax.swing.JLabel();
         progress_STEP = new javax.swing.JLabel();
@@ -322,15 +321,26 @@ public class GuiMain extends javax.swing.JPanel {
             }
         });
 
+        jButton6.setText("Download");
+        jButton6.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButton6ActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
             jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel4Layout.createSequentialGroup()
-                .addContainerGap()
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, 528, Short.MAX_VALUE)
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.Alignment.TRAILING))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 528, Short.MAX_VALUE))
+                    .addGroup(jPanel4Layout.createSequentialGroup()
+                        .addComponent(jButton6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 280, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
@@ -339,7 +349,9 @@ public class GuiMain extends javax.swing.JPanel {
                 .addContainerGap()
                 .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 240, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton4))
+                .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jButton4)
+                    .addComponent(jButton6)))
         );
 
         jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Progress", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13))); // NOI18N
@@ -596,6 +608,17 @@ public class GuiMain extends javax.swing.JPanel {
     static String db_path = "";
     static String db_name = "";
 
+    boolean canada = true;
+    boolean usa = true;
+    boolean ycs = true;
+
+    ArrayList<String> files_usa = new ArrayList<>();
+
+    PreProcessorYCS_F pycs = null;
+    PreProcessorCanada_F pfff = null;
+    PreProcessorUS_F p_usa = new PreProcessorUS_F();
+    File f;
+
     static String folder_canada_after_extraction = "";
 
     /**
@@ -607,217 +630,53 @@ public class GuiMain extends javax.swing.JPanel {
         download_folder = downloadLABEL.getText();
         db_name = field_db_name.getText();
         db_path = output_folder + Tools.OSValidator() + db_name;
-        File f = new File(db_path);
+        f = new File(db_path);
 
-        PreProcessorUS_F p_usa = new PreProcessorUS_F();
-
-        HashSet<String> downloaded_zips = new HashSet<>();
-        ArrayList<String> files_usa = new ArrayList<>();
-
-        ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-        int size = model.getSize();
-        for (int i = 0; i < size; i++) {
-            Parser_File_Overview elementAt = model.getElementAt(i);
-            ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-            for (Parser_File_Entry p_info : p_infos) {
-                System.out.println(p_info.getUrl());
-                String url = p_info.getUrl();
-                String d_file = download_folder + Tools.OSValidator()
-                        + p_info.getName() + ".zip";
-                if (p_info.getUrl().contains(Properties.canada_url_check)) {
-                    try {
-                        Tools.doDownload(p_info.getDownload_url(), d_file);
-                        downloaded_zips.add(d_file);
-                    } catch (IOException ex) {
-                    }
-                } else if (p_info.getUrl().contains("info.mhra")) {
-                    PreProcessorYCS_F pycs = new PreProcessorYCS_F(f, p_info.getUrl(),
-                            download_folder, output_folder);
-                    try {
-                        new WorkerYCS(pycs).execute();
-                    } catch (IOException ex) {
-                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-
-                } else {
-                    String kind_year = p_info.getName();
-                    if (!kind_year.equals("")) {
-                        files_usa.add(kind_year.substring(2).toUpperCase());
-                        try {
-                            p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
-                            p_usa.extractFileAfterDownload(d_file, download_folder);
-                        } catch (IOException ex) {
-                            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
-                }
+        if (canada && !usa && !ycs) {
+            try {
+                pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                WorkerCAN workerCan = new WorkerCAN(pfff, f);
+                workerCan.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
             }
+        } else if (canada && usa && !ycs) {
+            try {
+                pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+//                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f, new WorkerCAN(pfff, f));
+//                w_usa.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (canada && usa && ycs) {
+            try {
+                pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                WorkerUSA w_ussa = new WorkerUSA(p_usa, files_usa, f);
+                WorkerCAN w_canaa = new WorkerCAN(pfff, f, pycs, w_ussa);
+                w_canaa.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (canada && !usa && ycs) {
+            try {
+                pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                WorkerCAN workerCan = new WorkerCAN(pfff, f, pycs);
+                workerCan.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (!canada && usa && !ycs) {
+//            try {
+//                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+//                w_usa.execute();
+//            } catch (IOException ex) {
+//                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//            }
         }
 
-        System.out.println(files_usa.size());
-
-        try {
-            WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
-            w_usa.execute();
-        } catch (IOException ex) {
-            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Exception ex) {
-            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        System.out.println("END.");
-
-//
-//        SwingUtilities.invokeLater(new Runnable() {
-//            @Override
-//            public void run() {
-//                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-//                int size = model.getSize();
-//                for (int i = 0; i < size; i++) {
-//                    Parser_File_Overview elementAt = model.getElementAt(i);
-//                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-//                    for (Parser_File_Entry p_info : p_infos) {
-//                        System.out.println(p_info.getUrl());
-//                        String url = p_info.getUrl();
-//                        String d_file = download_folder + Tools.OSValidator()
-//                                + p_info.getName() + ".zip";
-//                        if (p_info.getUrl().contains(Properties.canada_url_check)) {
-//                            try {
-//                                Tools.doDownload(p_info.getDownload_url(), d_file);
-//                                downloaded_zips.add(d_file);
-//                            } catch (IOException ex) {
-//                            }
-//                        } else if (p_info.getUrl().contains("info.mhra")) {
-//                            pp_ycs = new PreProcessorYCS_F(f, p_info.getUrl(),
-//                                    download_folder, output_folder);
-//
-//                        } else {
-//                            String kind_year = p_info.getName();
-//                            if (!kind_year.equals("")) {
-//                                files_usa.add(kind_year.substring(2).toUpperCase());
-//                                try {
-//                                    p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
-//                                    p_usa.extractFileAfterDownload(d_file, download_folder);
-//                                } catch (IOException ex) {
-//                                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//                                }
-//                            }
-//                        }
-//
-//                    }
-//                }
-//            }
-//        });
-//        SwingUtilities.invokeLater(new Runnable() {
-//            @Override
-//            public void run() {
-//                for (String downloaded_zip : downloaded_zips) {
-//                    String unZipIt = Tools.unZipItCanada(downloaded_zip, download_folder);
-//                    folder_canada_after_extraction = unZipIt;
-//                }
-//            }
-//        });
-//
-//        SwingUtilities.invokeLater(new Runnable() {
-//            @Override
-//            public void run() {
-//                try {
-//                    PreProcessorCanada_F pfff = new PreProcessorCanada_F(f, download_folder, folder_canada_after_extraction);
-//                } catch (IOException ex) {
-//                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//                }
-//            }
-//        });
 
     }//GEN-LAST:event_jButton4ActionPerformed
 
-    public class WorkerUSA extends SwingWorker<String, String> {
-
-        PreProcessorUS_F p_usa;
-        ArrayList<String> files_usa;
-        File f;
-
-        public WorkerUSA(PreProcessorUS_F a, ArrayList<String> filess, File f) throws IOException {
-            this.p_usa = a;
-            this.files_usa = filess;
-            this.f = f;
-        }
-
-        @Override
-        protected String doInBackground() throws Exception {
-
-            String next = files_usa.get(0);
-            SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
-                    + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
-
-            if (next.equals("14Q2")) {
-                p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 2);
-                HashSet<USgenerellNode> receiveMapInternNodes = p_usa.receiveMapInternNodes();
-                Iterator<USgenerellNode> iterator1 = receiveMapInternNodes.iterator();
-                while (iterator1.hasNext()) {
-                    String ProcessOneNode = p_usa.ProcessOneNode(iterator1.next());
-                    publish(ProcessOneNode);
-                }
-                files_usa.remove(next);
-                if (!files_usa.isEmpty()) {
-                    publish("DONE.");
-                    WorkerUSA wUSA = new WorkerUSA(p_usa, files_usa, f);
-                    wUSA.execute();
-                }
-            } else {
-                p_usa.PreProcessorUS_F_14Q2(f, initializePathsAfterDownload, 1);
-                HashSet<USgenerellNode> receiveMapInternNodes = p_usa.receiveMapInternNodes();
-                Iterator<USgenerellNode> iterator1 = receiveMapInternNodes.iterator();
-                while (iterator1.hasNext()) {
-                    String ProcessOneNode = p_usa.ProcessOneNode(iterator1.next());
-                    publish(ProcessOneNode);
-                }
-                files_usa.remove(next);
-                if (!files_usa.isEmpty()) {
-                    publish("DONE.");
-                    WorkerUSA wUSA = new WorkerUSA(p_usa, files_usa, f);
-                    wUSA.execute();
-                }
-            }
-            p_usa.closeDB();
-            return null;
-        }
-
-        @Override
-        protected void process(List<String> item
-        ) {
-            progress_AREA.setText(item.get(item.size() - 1) + "\n");
-        }
-
-    }
-
-    public class WorkerYCS extends SwingWorker<String, String> {
-
-        PreProcessorYCS_F ycs;
-        HashMap<String, HashSet<String>> d_folders;
-
-        public WorkerYCS(PreProcessorYCS_F a) throws IOException {
-            this.ycs = a;
-            d_folders = ycs.startPreProcessingAll();
-        }
-
-        @Override
-        protected String doInBackground() throws Exception {
-
-            //This is what's called in the .execute method
-            for (String string : d_folders.keySet()) {
-                String startIntegrateOneFolder = ycs.startIntegrateOneFolder(d_folders, string);
-                publish(startIntegrateOneFolder);
-            }
-            ycs.closeDB();
-            return null;
-        }
-
-        protected void process(List<String> item) {
-            //This updates the UI
-            progress_AREA.setText(item.get(item.size() - 1) + "\n");
-        }
-    }
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
 
@@ -863,6 +722,265 @@ public class GuiMain extends javax.swing.JPanel {
         parserItemChanged();
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // DOWNLOADING...!
+        HashSet<String> downloaded_zips = new HashSet<>();
+        output_folder = pathLABEL.getText();
+        download_folder = downloadLABEL.getText();
+        db_name = field_db_name.getText();
+        db_path = output_folder + Tools.OSValidator() + db_name;
+        f = new File(db_path);
+
+        ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+        int size = model.getSize();
+        for (int i = 0; i < size; i++) {
+            Parser_File_Overview elementAt = model.getElementAt(i);
+            ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+            for (Parser_File_Entry p_info : p_infos) {
+                String url = p_info.getUrl();
+                String d_file = download_folder + Tools.OSValidator()
+                        + p_info.getName() + ".zip";
+                if (p_info.getUrl().contains(Properties.canada_url_check)) {
+                    canada = true;
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                System.out.println("DOWNLOAD");
+                                String downloadFILE_ZIP = Tools.downloadFILE_ZIP(p_info.getDownload_url(), d_file);
+                            } catch (IOException ex) {
+                                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            downloaded_zips.add(d_file);
+                        }
+                    });
+                } else if (p_info.getUrl().contains("info.mhra")) {
+                    ycs = true;
+                    pycs = new PreProcessorYCS_F(f, p_info.getUrl(),
+                            download_folder, output_folder);
+                    try {
+                        pycs.startPreProcessingAll();
+                        pycs.closeDB();
+                    } catch (IOException ex) {
+                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    String kind_year = p_info.getName();
+                    if (!kind_year.equals("")) {
+                        usa = true;
+                        files_usa.add(kind_year.substring(2).toUpperCase());
+                        try {
+                            p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
+                            p_usa.extractFileAfterDownload(d_file, download_folder);
+                        } catch (IOException ex) {
+                            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                for (String downloaded_zip : downloaded_zips) {
+                    String unZipIt = Tools.unZipItCanada(downloaded_zip, download_folder);
+                    folder_canada_after_extraction = unZipIt;
+                }
+            }
+        });
+
+    }//GEN-LAST:event_jButton6ActionPerformed
+
+    /**
+     * SwingWorker for Integrating Canada Data Set.
+     */
+    public class WorkerCAN extends SwingWorker<String, String> {
+
+        PreProcessorCanada_F p_can;
+        PreProcessorYCS_F p_ycs;
+        WorkerUSA w_usa;
+        File f;
+
+        public WorkerCAN(PreProcessorCanada_F p_can, File f) throws IOException {
+            this.p_can = p_can;
+            this.f = f;
+            initBeforeStart();
+        }
+
+        public WorkerCAN(PreProcessorCanada_F p_can, File f, PreProcessorYCS_F w_ycs) throws IOException {
+            this.p_can = p_can;
+            this.f = f;
+            this.p_ycs = w_ycs;
+            initBeforeStart();
+        }
+
+        public WorkerCAN(PreProcessorCanada_F p_can, File f, PreProcessorYCS_F w_ycs, WorkerUSA w_usaa) throws IOException {
+            this.p_can = p_can;
+            this.f = f;
+            this.w_usa = w_usaa;
+            this.p_ycs = w_ycs;
+            initBeforeStart();
+        }
+
+        public void initBeforeStart() throws IOException {
+            p_can.CreatePreprocessingCanada();
+            p_can.InitFileWriting(f);
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+            HashSet<CanadaNode> returnAllEntries = p_can.returnAllEntries();
+            for (CanadaNode next : returnAllEntries) {
+                String processOneNode = p_can.processOneNode(next);
+                publish(processOneNode);
+            }
+            p_can.clearAllMaps();
+            p_can.closeDB();
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            if (p_ycs != null) {
+                try {
+                    new WorkerYCS(p_ycs, w_usa).execute();
+                } catch (IOException ex) {
+                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+
+        @Override
+        protected void process(List<String> item) {
+            progress_AREA.setText(item.get(item.size() - 1) + "\n");
+        }
+
+    }
+
+    /**
+     * SwingWorker for Integrating Great Britain Data Set.
+     */
+    public class WorkerYCS extends SwingWorker<String, String> {
+
+        PreProcessorYCS_F ycs;
+        HashMap<String, HashSet<String>> d_folders = new HashMap<>();
+        WorkerUSA w_usa;
+
+        public WorkerYCS(PreProcessorYCS_F a, WorkerUSA worker) throws IOException {
+            this.ycs = a;
+            this.w_usa = worker;
+            d_folders = ycs.startPreProcessingAll();
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+
+            //This is what's called in the .execute method
+            if (ycs != null) {
+                for (String string : d_folders.keySet()) {
+                    String startIntegrateOneFolder = ycs.startIntegrateOneFolder(d_folders, string);
+                    publish(startIntegrateOneFolder);
+                }
+            }
+            ycs.closeDB();
+
+            if (w_usa != null) {
+                w_usa.execute();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void process(List<String> item) {
+            //This updates the UI
+            progress_AREA.setText(item.get(item.size() - 1) + "\n");
+        }
+    }
+
+    /**
+     * SwingWorker for Integrating F.E.A.R.S Data Set.
+     */
+    public class WorkerUSA extends SwingWorker<String, String> {
+
+        PreProcessorUS_F p_usa;
+        PreProcessorCanada_F p_cana;
+        ArrayList<String> files_usa;
+        File f;
+
+        public WorkerUSA(PreProcessorUS_F a, ArrayList<String> filess, File f, PreProcessorCanada_F p_c) throws IOException {
+            this.p_usa = a;
+            this.files_usa = filess;
+            this.p_cana = p_c;
+            this.f = f;
+        }
+
+        public WorkerUSA(PreProcessorUS_F a, ArrayList<String> filess, File f) throws IOException {
+            this.p_usa = a;
+            this.files_usa = filess;
+            this.p_cana = null;
+            this.f = f;
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+
+            String next = files_usa.get(0);
+            SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
+                    + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
+
+            if (next.equals("14Q2")) {
+                p_usa.initFile(f);
+                p_usa.PreProcessorUS_F_14Q2(initializePathsAfterDownload, 2);
+                HashSet<USgenerellNode> receiveMapInternNodes = p_usa.receiveMapInternNodes();
+                Iterator<USgenerellNode> iterator1 = receiveMapInternNodes.iterator();
+                while (iterator1.hasNext()) {
+                    String ProcessOneNode = p_usa.ProcessOneNode(iterator1.next());
+                    publish(ProcessOneNode);
+                }
+                files_usa.remove(next);
+
+            } else {
+                p_usa.initFile(f);
+                p_usa.PreProcessorUS_F_14Q2(initializePathsAfterDownload, 1);
+                HashSet<USgenerellNode> receiveMapInternNodes = p_usa.receiveMapInternNodes();
+                Iterator<USgenerellNode> iterator1 = receiveMapInternNodes.iterator();
+                while (iterator1.hasNext()) {
+                    String ProcessOneNode = p_usa.ProcessOneNode(iterator1.next());
+                    publish(ProcessOneNode);
+                }
+                files_usa.remove(next);
+            }
+            p_usa.closeDB();
+            return null;
+        }
+
+        @Override
+        protected void process(List<String> item) {
+            progress_AREA.setText(item.get(item.size() - 1) + "\n");
+        }
+
+        @Override
+        protected void done() {
+            if (!files_usa.isEmpty()) {
+                publish("DONE.");
+                System.out.println(files_usa.size());
+                WorkerUSA wUSA;
+                try {
+                    wUSA = new WorkerUSA(p_usa, files_usa, f);
+                    wUSA.execute();
+                } catch (IOException ex) {
+                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                // all usa files integrated.
+                progress_AREA.setText("Integration Finished.");
+            }
+        }
+
+    }
+
     public void parserItemChanged() {
         empty_set.clear();
         Object item = jComboBox1.getSelectedItem();
@@ -904,6 +1022,7 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
+    private javax.swing.JButton jButton6;
     public javax.swing.JComboBox<Parser_Info> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;

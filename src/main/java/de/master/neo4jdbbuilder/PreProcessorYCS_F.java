@@ -71,6 +71,11 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
     File db_file;
     String download_folder;
     String output_folder;
+    
+    public void clearAllMaps(){
+        patient_for_link.clear();
+        db.shutdown();
+    }
 
     public PreProcessorYCS_F(File f, String jason_file, String download_folder, String output_folder) {
         this.jason_file = jason_file;
@@ -128,7 +133,7 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
 
             Iterator<String> it = br_case.lines().iterator();
             it.next(); // First Line only props...
-
+            
             while (it.hasNext()) {
                 String next = it.next();
                 String[] split_case = next.split(",");
@@ -148,6 +153,7 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
                             node_report.setProperty(entry.getKey(), split_case[entry.getValue()]);
                             break;
                     }
+                    node_report.setProperty(Properties.UNIQUE_SOURCE, Properties.unique_id_uk);
                 }
 
                 for (Map.Entry<String, Integer> entry : get_patients.entrySet()) {
@@ -192,7 +198,7 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
                 for (Map.Entry<String, Integer> entry : get_drug.entrySet()) {
                     switch (entry.getValue()) {
                         case -2:
-                            node_drug.setProperty(entry.getKey(), drug_name);
+                            node_drug.setProperty(entry.getKey(), drug_name.toUpperCase());
                             break;
                         case -1:
                             node_drug.setProperty(entry.getKey(), "n/a");

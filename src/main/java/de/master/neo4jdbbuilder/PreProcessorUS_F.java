@@ -74,14 +74,16 @@ public final class PreProcessorUS_F implements Properties {
         db.shutdown();
     }
 
-    public void PreProcessorUS_F_14Q2(File f,
-            SortedSet<String> files_names, int option) throws IOException, InterruptedException {
-
-        clearAllMaps();
+    void initFile(File f) {
         GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
         String symb = Tools.OSValidator();
         String rel_path = basic_path_database + symb + basic_path_us + symb;
         db = dbFactory.newEmbeddedDatabase(f);
+    }
+
+    public void PreProcessorUS_F_14Q2(SortedSet<String> files_names, int option) throws IOException, InterruptedException {
+        clearAllMaps();
+        String symb = Tools.OSValidator();
 
         System.out.println("STARTING ...");
 
@@ -179,7 +181,7 @@ public final class PreProcessorUS_F implements Properties {
         }
 //        db.shutdown();
     }
-    
+
     static int counter = 0;
     static int max;
 
@@ -187,7 +189,7 @@ public final class PreProcessorUS_F implements Properties {
         USThread_F_14Q2 thread = new USThread_F_14Q2(node, alls_config_props, db);
         thread.run();
         counter++;
-        return counter +"/" + max+ "\t\t" + Tools.round(counter, max, 3) + "  %";
+        return counter + "/" + max + "\t\t" + Tools.round(counter, max, 3) + "  %";
     }
 
     public void reUnion(String symb, String Demographic) throws IOException {

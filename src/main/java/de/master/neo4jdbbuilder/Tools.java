@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -129,6 +130,27 @@ public class Tools {
             connection = null;
         }
 
+    }
+
+    static String downloadFILE_ZIP(String url_link, String output_file) throws MalformedURLException, IOException {
+        URL url = new URL(url_link);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+        InputStream in = connection.getInputStream();
+        FileOutputStream out = new FileOutputStream(output_file);
+        copy(in, out, 1024);
+        out.close();
+        return output_file;
+    }
+
+    public static void copy(InputStream input, OutputStream output, int bufferSize) throws IOException {
+        byte[] buf = new byte[bufferSize];
+        int n = input.read(buf);
+        while (n >= 0) {
+            output.write(buf, 0, n);
+            n = input.read(buf);
+        }
+        output.flush();
     }
 
     static int estimateFileSize(String sourceFileWebAddress) throws IOException {
@@ -1302,8 +1324,8 @@ public class Tools {
         long size = fos.getChannel().size();
 
         System.out.println(output + " --- " + size);
-        if (new File(output).exists()) {
-
+        if (new File(output).exists() && new File(output).length() != 0) {
+            System.out.println("File Already exists");
         } else {
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
         }

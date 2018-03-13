@@ -13,6 +13,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import javax.swing.JTextArea;
+import javax.swing.SwingWorker;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -29,11 +32,21 @@ public class RedundancyChecker {
     String database;
     String database_name;
     String redundant_file;
+    JTextArea j_area;
     GraphDatabaseService db;
+    R_Worker rw;
 
-    public RedundancyChecker(String database, String name_db) {
-        this.database = database;
+    public RedundancyChecker(String databasee, String name_db, JTextArea area) throws IOException {
+        this.database = databasee;
         this.database_name = name_db;
+        this.j_area = area;
+        R_Worker rww = new R_Worker(j_area, database, database_name);
+        this.rw = rww;
+    }
+
+    public void executeWorker() {
+        InitFileWriting();
+        this.rw.execute();
     }
 
     public HashSet<Long> readFileRed() throws FileNotFoundException {
@@ -99,9 +112,8 @@ public class RedundancyChecker {
             fw.write(value + "\n");
             fw.flush();
         }
+        fw.close();
 
-        System.out.println("\n STRINGBUILDER");
-        System.out.println(sb.toString());
         return props_redundant;
     }
 
@@ -157,6 +169,49 @@ public class RedundancyChecker {
 
         CloseFileWriting();
 
+    }
+
+    public class R_Worker extends SwingWorker<String, String> {
+
+        JTextArea jarea;
+        String database_path;
+        String database_name;
+        HashSet<Long> all_redy = new HashSet<>();
+        HashSet<Long> all_uniq = new HashSet<>();
+
+        public R_Worker(JTextArea a, String path, String name) throws IOException {
+            this.jarea = a;
+            this.database_name = name;
+            this.database_path = path;
+        }
+
+        @Override
+        protected String doInBackground() throws Exception {
+
+            try (Transaction tx = db.beginTx();) {
+                ResourceIterator<Node> findNodes = db.findNodes(Entities.Patient);
+                while (findNodes.hasNext()) {
+                    Node next = findNodes.next();
+                    Object property = next.getProperty("primaryID");
+                    String y = property.toString();
+                    if (all_uniq.contains(y)) {
+                        all_redy.add(next.getId());
+                        publish(y);
+                    } else {
+                        all_uniq.add(next.getId());
+                    }
+                }
+                tx.success();
+            }
+            CloseFileWriting();
+            return null;
+        }
+
+        @Override
+        protected void process(List<String> item) {
+            //This updates the UI
+            jarea.setText(item.get(item.size() - 1) + "\n");
+        }
     }
 
 }

@@ -809,20 +809,21 @@ public class GuiMain extends javax.swing.JPanel {
     }//GEN-LAST:event_jButton6ActionPerformed
 
     private void redundancyBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_redundancyBUTTONActionPerformed
-        // TODO add your handling code here:
-        RedundancyChecker rc = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText());
         try {
-            rc.InitFileWriting();
-            HashSet<Long> checkDoubles = rc.checkDoubles();
+            // TODO add your handling code here:
+            RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
+            red_checker.InitFileWriting();
+            HashSet<Long> checkDoubles = red_checker.checkDoubles();
+            progress_AREA.setText("...checking for redundancies...\n");
             for (Long checkDouble : checkDoubles) {
-                String aa = String.valueOf(checkDouble);
-                progress_AREA.append(aa + "\n");
+                progress_AREA.append(checkDouble + "\n");
             }
-            rc.CloseFileWriting();
+            red_checker.CloseFileWriting();
         } catch (IOException ex) {
             Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
         }
         
+
     }//GEN-LAST:event_redundancyBUTTONActionPerformed
 
     /**

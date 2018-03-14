@@ -1323,8 +1323,7 @@ public class Tools {
         FileOutputStream fos = new FileOutputStream(output);
         long size = fos.getChannel().size();
 
-        System.out.println(output + " --- " + size);
-        if (new File(output).exists() && new File(output).length() != 0) {
+        if (new File(output).exists()) {
             System.out.println("File Already exists");
         } else {
             fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);

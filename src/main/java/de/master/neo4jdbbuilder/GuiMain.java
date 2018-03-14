@@ -670,8 +670,9 @@ public class GuiMain extends javax.swing.JPanel {
         } else if (canada && usa && !ycs) {
             try {
                 pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
-//                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f, new WorkerCAN(pfff, f));
-//                w_usa.execute();
+                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+                WorkerCAN w_canaa = new WorkerCAN(pfff, f, null, w_usa);
+                w_canaa.execute();
             } catch (IOException ex) {
                 Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -693,12 +694,27 @@ public class GuiMain extends javax.swing.JPanel {
                 Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (!canada && usa && !ycs) {
-//            try {
-//                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
-//                w_usa.execute();
-//            } catch (IOException ex) {
-//                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//            }
+            try {
+                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+                w_usa.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (!canada && !usa && ycs) {
+            try {
+                WorkerYCS w_ycs = new WorkerYCS(pycs, null);
+                w_ycs.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (!canada && usa && ycs) {
+            try {
+                WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+                WorkerYCS w_ycs = new WorkerYCS(pycs, w_usa);
+                w_ycs.execute();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
 
 
@@ -757,6 +773,9 @@ public class GuiMain extends javax.swing.JPanel {
         db_name = field_db_name.getText();
         db_path = output_folder + Tools.OSValidator() + db_name;
         f = new File(db_path);
+        canada = false;
+        ycs = false;
+        usa = false;
 
         ListModel<Parser_File_Overview> model = overviewLIST.getModel();
         int size = model.getSize();
@@ -845,7 +864,7 @@ public class GuiMain extends javax.swing.JPanel {
                 progress_AREA.append(checkDouble + "\n");
             }
             red_checker.removeDoubles(readFileRed);
-            
+
         } catch (IOException ex) {
             Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -864,6 +883,14 @@ public class GuiMain extends javax.swing.JPanel {
         public WorkerCAN(PreProcessorCanada_F p_can, File f) throws IOException {
             this.p_can = p_can;
             this.f = f;
+            initBeforeStart();
+        }
+
+        public WorkerCAN(PreProcessorCanada_F p_can, File f, WorkerUSA w_usaa) throws IOException {
+            this.p_can = p_can;
+            this.f = f;
+            this.w_usa = w_usaa;
+            this.p_ycs = null;
             initBeforeStart();
         }
 
@@ -901,12 +928,20 @@ public class GuiMain extends javax.swing.JPanel {
 
         @Override
         protected void done() {
-            if (p_ycs != null) {
+            if (p_ycs != null && w_usa != null) {
                 try {
                     new WorkerYCS(p_ycs, w_usa).execute();
                 } catch (IOException ex) {
                     Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
                 }
+            } else if (p_ycs != null && w_usa == null) {
+                try {
+                    new WorkerYCS(p_ycs, null).execute();
+                } catch (IOException ex) {
+                    Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (w_usa != null && p_ycs == null) {
+                w_usa.execute();
             }
         }
 

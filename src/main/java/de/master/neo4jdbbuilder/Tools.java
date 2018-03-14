@@ -137,9 +137,11 @@ public class Tools {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         InputStream in = connection.getInputStream();
-        FileOutputStream out = new FileOutputStream(output_file);
-        copy(in, out, 1024);
-        out.close();
+        if (!new File(output_file).exists()) {
+            FileOutputStream out = new FileOutputStream(output_file);
+            copy(in, out, 1024);
+            out.close();
+        }
         return output_file;
     }
 
@@ -1322,12 +1324,10 @@ public class Tools {
         ReadableByteChannel rbc = Channels.newChannel(websiteUrl.openStream());
         FileOutputStream fos = new FileOutputStream(output);
         long size = fos.getChannel().size();
-
-        if (new File(output).exists()) {
-            System.out.println("File Already exists");
-        } else {
-            fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        if(new File(output).exists()){
+            System.out.println("already exists.");
         }
+        fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
     }
 
     static HashMap<String, HashMap<String, Integer>> parsePropertiesYCS(String dir) {

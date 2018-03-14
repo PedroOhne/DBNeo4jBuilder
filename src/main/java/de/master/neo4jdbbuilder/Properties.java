@@ -27,7 +27,7 @@ public interface Properties {
     String config_path_file = "c_all.txt";
     
     String config_redundancy_file = "redundancies.txt";
-  
+    String config_database_internal = "db_config.txt";
     
 
     String config_entity_patient = "Patient";

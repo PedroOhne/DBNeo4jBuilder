@@ -23,6 +23,10 @@ public class Parser_File_Overview {
         this.name = name;
         this.p_infos = p_infos;
     }
+    
+    public String returnNameTopic(){
+        return this.name;
+    }
 
     Double convertForShowOnList() {
         Double dd = 0.0;

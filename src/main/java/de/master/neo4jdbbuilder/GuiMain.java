@@ -10,8 +10,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +25,7 @@ import java.util.SortedSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
+import java.util.stream.Stream;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JFileChooser;
@@ -184,6 +189,7 @@ public class GuiMain extends javax.swing.JPanel {
         jButton5 = new javax.swing.JButton();
         jButton2 = new javax.swing.JButton();
         downloadLABEL = new javax.swing.JLabel();
+        openEXISTED_DB_BUTTON = new javax.swing.JButton();
         SEARCHPanel = new javax.swing.JPanel();
 
         setOpaque(false);
@@ -269,7 +275,7 @@ public class GuiMain extends javax.swing.JPanel {
                 .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel5)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 219, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(30, Short.MAX_VALUE))
         );
 
         jPanel3.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Parser Files", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13)))); // NOI18N
@@ -468,6 +474,13 @@ public class GuiMain extends javax.swing.JPanel {
         downloadLABEL.setFocusable(false);
         downloadLABEL.setRequestFocusEnabled(false);
 
+        openEXISTED_DB_BUTTON.setText("Open Neo4J Database");
+        openEXISTED_DB_BUTTON.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                openEXISTED_DB_BUTTONActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel6Layout = new javax.swing.GroupLayout(jPanel6);
         jPanel6.setLayout(jPanel6Layout);
         jPanel6Layout.setHorizontalGroup(
@@ -475,32 +488,38 @@ public class GuiMain extends javax.swing.JPanel {
             .addGroup(jPanel6Layout.createSequentialGroup()
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel6Layout.createSequentialGroup()
-                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(jButton2, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
+                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
+                            .addComponent(jButton5, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
                             .addGroup(jPanel6Layout.createSequentialGroup()
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(jButton5, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                                .addContainerGap()
+                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE)))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(pathLABEL, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(downloadLABEL, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(jPanel6Layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
-                .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addComponent(pathLABEL, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(field_db_name)
-                    .addComponent(downloadLABEL, javax.swing.GroupLayout.PREFERRED_SIZE, 238, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(jPanel6Layout.createSequentialGroup()
+                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(field_db_name))
+                            .addComponent(openEXISTED_DB_BUTTON, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
                 .addGap(12, 12, 12))
         );
         jPanel6Layout.setVerticalGroup(
             jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel6Layout.createSequentialGroup()
-                .addGap(9, 9, 9)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(openEXISTED_DB_BUTTON)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel2)
                     .addComponent(field_db_name, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(4, 4, 4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton5)
                     .addComponent(pathLABEL, javax.swing.GroupLayout.PREFERRED_SIZE, 23, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -508,9 +527,9 @@ public class GuiMain extends javax.swing.JPanel {
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton2)
                     .addComponent(downloadLABEL))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel6Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 186, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel1))
                 .addContainerGap())
         );
@@ -559,7 +578,7 @@ public class GuiMain extends javax.swing.JPanel {
         );
         SEARCHPanelLayout.setVerticalGroup(
             SEARCHPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 656, Short.MAX_VALUE)
+            .addGap(0, 677, Short.MAX_VALUE)
         );
 
         jTabbedPane1.addTab("Search Function", SEARCHPanel);
@@ -651,16 +670,16 @@ public class GuiMain extends javax.swing.JPanel {
     boolean ycs = true;
 
     ArrayList<String> files_usa = new ArrayList<>();
-
     PreProcessorYCS_F pycs = null;
     PreProcessorCanada_F pfff = null;
     PreProcessorUS_F p_usa = new PreProcessorUS_F();
     File f;
 
     static String folder_canada_after_extraction = "";
+    static HashSet<String> loaded_integrated_files = new HashSet<>();
 
     /**
-     * Start download, extraction, integration.
+     * Start integration.
      */
     private void jButton4ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton4ActionPerformed
 
@@ -669,6 +688,64 @@ public class GuiMain extends javax.swing.JPanel {
         db_name = field_db_name.getText();
         db_path = output_folder + Tools.OSValidator() + db_name;
         f = new File(db_path);
+        if (!f.exists()) {
+            f.mkdirs();
+        }
+
+        /**
+         * Init File For later Updating that DB
+         */
+        File f_config = new File(db_path + Tools.OSValidator() + Properties.config_database_internal);
+        if (!f_config.exists()) {
+            try {
+                f_config.createNewFile();
+                FileWriter fw = new FileWriter(f_config);
+                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+                int size = model.getSize();
+                for (int i = 0; i < size; i++) {
+                    Parser_File_Overview elementAt = model.getElementAt(i);
+                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+                    for (Parser_File_Entry p_info : p_infos) {
+                        String name = p_info.getName();
+                        fw.write(name + "\n");
+                        fw.flush();
+                    }
+                    fw.write("\n");
+                    fw.flush();
+                }
+                fw.write(download_folder);
+                fw.close();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            try {
+                f_config.createNewFile();
+                FileWriter fw = new FileWriter(f_config);
+                for (String loaded_integrated_file : loaded_integrated_files) {
+                    fw.write(loaded_integrated_file + "\n");
+                    fw.flush();
+                }
+                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+                int size = model.getSize();
+                for (int i = 0; i < size; i++) {
+                    Parser_File_Overview elementAt = model.getElementAt(i);
+                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+                    for (Parser_File_Entry p_info : p_infos) {
+                        String name = p_info.getName();
+                        fw.write(name + "\n");
+                        fw.flush();
+                    }
+                    fw.write("\n");
+                    fw.flush();
+                }
+                fw.write(download_folder);
+                fw.close();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
 
         if (canada && !usa && !ycs) {
             try {
@@ -745,6 +822,7 @@ public class GuiMain extends javax.swing.JPanel {
         overviewLIST.setModel(dmd_o);
         filesLISTE.setModel(dmd_empty);
         dmd_as = new HashSet<>();
+
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -754,7 +832,10 @@ public class GuiMain extends javax.swing.JPanel {
 
         if (empty_set != null) {
             for (Parser_File_Entry all_url : empty_set.values()) {
-                dmd_a.addElement(all_url);
+                String name = all_url.getName();
+                if (!loaded_integrated_files.contains(name)) {
+                    dmd_a.addElement(all_url);
+                }
             }
         }
 
@@ -851,7 +932,6 @@ public class GuiMain extends javax.swing.JPanel {
 
     private void redundancyBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_redundancyBUTTONActionPerformed
         try {
-            // TODO add your handling code here:
             RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
             red_checker.InitFileWriting();
             HashSet<Long> checkDoubles = red_checker.checkDoubles();
@@ -868,7 +948,6 @@ public class GuiMain extends javax.swing.JPanel {
     private void read_redun_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_read_redun_BUTTONActionPerformed
         jTextArea1.setText("");
         try {
-            // TODO add your handling code here:
             RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
             HashSet<Long> readFileRed = red_checker.readFileRed();
             for (Long checkDouble : readFileRed) {
@@ -882,10 +961,67 @@ public class GuiMain extends javax.swing.JPanel {
     }//GEN-LAST:event_read_redun_BUTTONActionPerformed
 
     private void deleteOverviewBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteOverviewBUTTONActionPerformed
-        // TODO add your handling code here:
         dmd_o.clear();
         overviewLIST.setModel(dmd_o);
     }//GEN-LAST:event_deleteOverviewBUTTONActionPerformed
+
+    private void openEXISTED_DB_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openEXISTED_DB_BUTTONActionPerformed
+
+        loaded_integrated_files.clear();
+        String path_config = "";
+        String db_load_name = "";
+
+        Preferences pref = Preferences.userRoot();
+        String path = pref.get("DB_PATH", "");
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Wähle Datenbank Ordner aus");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setCurrentDirectory(new File(path));
+        int result = chooser.showOpenDialog(null);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            pathLABEL.setText(chooser.getSelectedFile().getParent());
+            System.out.println(pathLABEL.getText());
+            File f = chooser.getCurrentDirectory();
+            db_load_name = chooser.getSelectedFile().getName();
+            pref.put("DB_PATH", f.getAbsolutePath());
+            Stream<Path> list;
+            try {
+                list = Files.list(Paths.get(f.getAbsolutePath()));
+                for (Object object : list.toArray()) {
+                    Path a = (Path) object;
+                    String filename = a.getFileName().toString();
+                    if (filename.equals(db_load_name)) {
+                        path_config = f.getAbsolutePath() + Tools.OSValidator() + db_load_name + Tools.OSValidator()
+                                + Properties.config_database_internal;
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+        field_db_name.setText(db_load_name);
+
+        try {
+            BufferedReader brr = new BufferedReader(new FileReader(new File(path_config)));
+            Iterator<String> iterator = brr.lines().iterator();
+            String last_line = "";
+            while (iterator.hasNext()) {
+                String next = iterator.next();
+                if (!next.equals("") && !next.startsWith("/") && !next.startsWith("\\")) {
+                    loaded_integrated_files.add(next);
+                }
+                last_line = next;
+            }
+            String path_df = last_line;
+            downloadLABEL.setText(path_df);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_openEXISTED_DB_BUTTONActionPerformed
 
     /**
      * SwingWorker for Integrating Canada Data Set.
@@ -1155,6 +1291,7 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JLabel labelSOURCE;
+    private javax.swing.JButton openEXISTED_DB_BUTTON;
     public javax.swing.JList<Parser_File_Overview> overviewLIST;
     private javax.swing.JLabel pathLABEL;
     private javax.swing.JTextArea progress_AREA;

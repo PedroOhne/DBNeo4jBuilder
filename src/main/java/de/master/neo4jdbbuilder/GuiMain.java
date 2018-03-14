@@ -165,6 +165,7 @@ public class GuiMain extends javax.swing.JPanel {
         overviewLIST = new javax.swing.JList<>();
         jButton4 = new javax.swing.JButton();
         jButton6 = new javax.swing.JButton();
+        deleteOverviewBUTTON = new javax.swing.JButton();
         jPanel5 = new javax.swing.JPanel();
         progress_Info = new javax.swing.JLabel();
         progress_STEP = new javax.swing.JLabel();
@@ -330,6 +331,13 @@ public class GuiMain extends javax.swing.JPanel {
             }
         });
 
+        deleteOverviewBUTTON.setText("Delete");
+        deleteOverviewBUTTON.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteOverviewBUTTONActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
         jPanel4Layout.setHorizontalGroup(
@@ -340,9 +348,11 @@ public class GuiMain extends javax.swing.JPanel {
                         .addContainerGap()
                         .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 528, Short.MAX_VALUE))
                     .addGroup(jPanel4Layout.createSequentialGroup()
-                        .addComponent(jButton6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jButton6, javax.swing.GroupLayout.PREFERRED_SIZE, 179, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 280, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addComponent(jButton4, javax.swing.GroupLayout.PREFERRED_SIZE, 167, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(deleteOverviewBUTTON, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jPanel4Layout.setVerticalGroup(
@@ -353,7 +363,8 @@ public class GuiMain extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel4Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jButton4)
-                    .addComponent(jButton6)))
+                    .addComponent(jButton6)
+                    .addComponent(deleteOverviewBUTTON)))
         );
 
         jPanel5.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0), 3, true), "Progress", javax.swing.border.TitledBorder.CENTER, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Helvetica", 1, 13))); // NOI18N
@@ -870,6 +881,12 @@ public class GuiMain extends javax.swing.JPanel {
         }
     }//GEN-LAST:event_read_redun_BUTTONActionPerformed
 
+    private void deleteOverviewBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteOverviewBUTTONActionPerformed
+        // TODO add your handling code here:
+        dmd_o.clear();
+        overviewLIST.setModel(dmd_o);
+    }//GEN-LAST:event_deleteOverviewBUTTONActionPerformed
+
     /**
      * SwingWorker for Integrating Canada Data Set.
      */
@@ -1107,6 +1124,7 @@ public class GuiMain extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel NEWPanel;
     private javax.swing.JPanel SEARCHPanel;
+    private javax.swing.JButton deleteOverviewBUTTON;
     private javax.swing.JTextArea descriptionAREA;
     private javax.swing.JLabel downloadLABEL;
     private javax.swing.JTextField field_db_name;

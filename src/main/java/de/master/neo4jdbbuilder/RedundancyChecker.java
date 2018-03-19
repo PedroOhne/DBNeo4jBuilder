@@ -36,6 +36,10 @@ public class RedundancyChecker {
     GraphDatabaseService db;
     R_Worker rw;
 
+    public RedundancyChecker(String databasee, String name_db) {
+
+    }
+
     public RedundancyChecker(String databasee, String name_db, JTextArea area) throws IOException {
         this.database = databasee;
         this.database_name = name_db;

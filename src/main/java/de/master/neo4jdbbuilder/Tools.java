@@ -141,6 +141,8 @@ public class Tools {
             FileOutputStream out = new FileOutputStream(output_file);
             copy(in, out, 1024);
             out.close();
+        }else{
+            System.out.println("exists.");
         }
         return output_file;
     }
@@ -1324,7 +1326,7 @@ public class Tools {
         ReadableByteChannel rbc = Channels.newChannel(websiteUrl.openStream());
         FileOutputStream fos = new FileOutputStream(output);
         long size = fos.getChannel().size();
-        if(new File(output).exists()){
+        if(new File(output).exists()&&new File(output).getTotalSpace()!=0){
             System.out.println("already exists.");
         }
         fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);

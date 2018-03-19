@@ -9,11 +9,10 @@ import java.io.IOException;
  */
 public final class Main implements Properties {
 
-
     public static void main(String args[]) throws FileNotFoundException, IOException, InterruptedException, Exception {
 
         GuiParentMain gpm = new GuiParentMain("Im Test");
         ParserBoxInstanzFirst pbif = new ParserBoxInstanzFirst();
-
+        
     }
 }

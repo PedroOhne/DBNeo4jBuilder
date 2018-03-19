@@ -641,25 +641,6 @@ public class GuiMain extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_field_db_nameActionPerformed
 
-    public class Worker extends SwingWorker<String, String> {
-
-        @Override
-        protected String doInBackground() throws Exception {
-            //This is what's called in the .execute method
-            for (int i = 0; i < 10; i++) {
-                //This sends the results to the .process method
-                publish(String.valueOf(i));
-                Thread.sleep(1000);
-            }
-            return null;
-        }
-
-        protected void process(List<String> item) {
-            //This updates the UI
-            progress_AREA.append(item + "\n");
-        }
-    }
-
     static String output_folder = "";
     static String download_folder = "";
     static String db_path = "";
@@ -692,60 +673,60 @@ public class GuiMain extends javax.swing.JPanel {
             f.mkdirs();
         }
 
-        /**
-         * Init File For later Updating that DB
-         */
-        File f_config = new File(db_path + Tools.OSValidator() + Properties.config_database_internal);
-        if (!f_config.exists()) {
-            try {
-                f_config.createNewFile();
-                FileWriter fw = new FileWriter(f_config);
-                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-                int size = model.getSize();
-                for (int i = 0; i < size; i++) {
-                    Parser_File_Overview elementAt = model.getElementAt(i);
-                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-                    for (Parser_File_Entry p_info : p_infos) {
-                        String name = p_info.getName();
-                        fw.write(name + "\n");
-                        fw.flush();
-                    }
-                    fw.write("\n");
-                    fw.flush();
-                }
-                fw.write(download_folder);
-                fw.close();
-            } catch (IOException ex) {
-                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            try {
-                f_config.createNewFile();
-                FileWriter fw = new FileWriter(f_config);
-                for (String loaded_integrated_file : loaded_integrated_files) {
-                    fw.write(loaded_integrated_file + "\n");
-                    fw.flush();
-                }
-                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-                int size = model.getSize();
-                for (int i = 0; i < size; i++) {
-                    Parser_File_Overview elementAt = model.getElementAt(i);
-                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-                    for (Parser_File_Entry p_info : p_infos) {
-                        String name = p_info.getName();
-                        fw.write(name + "\n");
-                        fw.flush();
-                    }
-                    fw.write("\n");
-                    fw.flush();
-                }
-                fw.write(download_folder);
-                fw.close();
-            } catch (IOException ex) {
-                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        }
+//        /**
+//         * Init File For later Updating that DB
+//         */
+//        File f_config = new File(db_path + Tools.OSValidator() + Properties.config_database_internal);
+//        if (!f_config.exists()) {
+//            try {
+//                f_config.createNewFile();
+//                FileWriter fw = new FileWriter(f_config);
+//                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+//                int size = model.getSize();
+//                for (int i = 0; i < size; i++) {
+//                    Parser_File_Overview elementAt = model.getElementAt(i);
+//                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+//                    for (Parser_File_Entry p_info : p_infos) {
+//                        String name = p_info.getName();
+//                        fw.write(name + "\n");
+//                        fw.flush();
+//                    }
+//                    fw.write("\n");
+//                    fw.flush();
+//                }
+//                fw.write(download_folder);
+//                fw.close();
+//            } catch (IOException ex) {
+//                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//        } else {
+//            try {
+//                f_config.createNewFile();
+//                FileWriter fw = new FileWriter(f_config);
+//                for (String loaded_integrated_file : loaded_integrated_files) {
+//                    fw.write(loaded_integrated_file + "\n");
+//                    fw.flush();
+//                }
+//                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+//                int size = model.getSize();
+//                for (int i = 0; i < size; i++) {
+//                    Parser_File_Overview elementAt = model.getElementAt(i);
+//                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+//                    for (Parser_File_Entry p_info : p_infos) {
+//                        String name = p_info.getName();
+//                        fw.write(name + "\n");
+//                        fw.flush();
+//                    }
+//                    fw.write("\n");
+//                    fw.flush();
+//                }
+//                fw.write(download_folder);
+//                fw.close();
+//            } catch (IOException ex) {
+//                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//
+//        }
 
         if (canada && !usa && !ycs) {
             try {
@@ -789,12 +770,19 @@ public class GuiMain extends javax.swing.JPanel {
                 Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (!canada && !usa && ycs) {
-            try {
-                WorkerYCS w_ycs = new WorkerYCS(pycs, null);
-                w_ycs.execute();
-            } catch (IOException ex) {
-                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        System.out.println("Start..");
+                        WorkerYCS w_ycs = new WorkerYCS(pycs, null);
+                        w_ycs.execute();
+                    } catch (IOException ex) {
+                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+
         } else if (!canada && usa && ycs) {
             try {
                 WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
@@ -898,7 +886,7 @@ public class GuiMain extends javax.swing.JPanel {
                             download_folder, output_folder);
                     try {
                         pycs.startPreProcessingAll();
-                        pycs.closeDB();
+//                        pycs.closeDB();
                     } catch (IOException ex) {
                         Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -1118,6 +1106,7 @@ public class GuiMain extends javax.swing.JPanel {
             this.ycs = a;
             this.w_usa = worker;
             d_folders = ycs.startPreProcessingAll();
+            ycs.initDB();
         }
 
         @Override
@@ -1174,6 +1163,8 @@ public class GuiMain extends javax.swing.JPanel {
         protected String doInBackground() throws Exception {
 
             String next = files_usa.get(0);
+            System.out.println(next);
+            
             SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
                     + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
 

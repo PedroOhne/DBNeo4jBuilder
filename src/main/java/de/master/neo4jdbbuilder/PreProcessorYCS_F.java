@@ -71,8 +71,8 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
     File db_file;
     String download_folder;
     String output_folder;
-    
-    public void clearAllMaps(){
+
+    public void clearAllMaps() {
         patient_for_link.clear();
         db.shutdown();
     }
@@ -99,13 +99,14 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
         get_reactions = map.get("Reaction");
         get_outcome = map.get("Outcome");
         meddra = getMeddraVersion(doDownloadOfAllandEXTRACTION);
-        GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
-        db = dbFactory.newEmbeddedDatabase(db_file);
 //        createDrugParentInstanceYCard(doDownloadOfAllandEXTRACTION);
         return doDownloadOfAllandEXTRACTION;
     }
-    
-    
+
+    public void initDB() {
+        GraphDatabaseFactory dbFactory = new GraphDatabaseFactory();
+        db = dbFactory.newEmbeddedDatabase(db_file);
+    }
 
     String startIntegrateOneFolder(HashMap<String, HashSet<String>> drug_folder, String drug_name) throws FileNotFoundException, IOException {
 
@@ -133,7 +134,7 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
 
             Iterator<String> it = br_case.lines().iterator();
             it.next(); // First Line only props...
-            
+
             while (it.hasNext()) {
                 String next = it.next();
                 String[] split_case = next.split(",");
@@ -247,8 +248,8 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
             return counter_process + "/" + counter_max + "\t" + Tools.round(counter_process, counter_max, 3) + " %";
         }
     }
-    
-    void closeDB(){
+
+    void closeDB() {
         db.shutdown();
     }
 

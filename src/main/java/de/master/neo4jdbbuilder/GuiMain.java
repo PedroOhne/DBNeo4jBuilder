@@ -17,11 +17,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -33,6 +35,9 @@ import javax.swing.JFrame;
 import javax.swing.ListModel;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
+import javax.swing.table.DefaultTableModel;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
 /**
  *
@@ -59,6 +64,7 @@ class ParserBoxInstanzFirst {
             }
             br.close();
         }
+
     }
 
     public ArrayList<Parser_Info> getAlle_parser() {
@@ -112,6 +118,11 @@ public class GuiMain extends javax.swing.JPanel {
             Parser_Info p = alle_parser.get(i);
             dmd.addElement(p);
         }
+
+        searchComboBoxList.addElement("drugname");
+        searchComboBoxList.addElement("indication");
+        searchComboBoxList.addElement("reaction");
+
         jComboBox1.setModel(dmd);
         descriptionAREA.setLineWrap(true);
         descriptionAREA.setWrapStyleWord(true);
@@ -190,7 +201,6 @@ public class GuiMain extends javax.swing.JPanel {
         jButton2 = new javax.swing.JButton();
         downloadLABEL = new javax.swing.JLabel();
         openEXISTED_DB_BUTTON = new javax.swing.JButton();
-        SEARCHPanel = new javax.swing.JPanel();
 
         setOpaque(false);
 
@@ -570,19 +580,6 @@ public class GuiMain extends javax.swing.JPanel {
 
         jTabbedPane1.addTab("Management -Database-", NEWPanel);
 
-        javax.swing.GroupLayout SEARCHPanelLayout = new javax.swing.GroupLayout(SEARCHPanel);
-        SEARCHPanel.setLayout(SEARCHPanelLayout);
-        SEARCHPanelLayout.setHorizontalGroup(
-            SEARCHPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 1160, Short.MAX_VALUE)
-        );
-        SEARCHPanelLayout.setVerticalGroup(
-            SEARCHPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 677, Short.MAX_VALUE)
-        );
-
-        jTabbedPane1.addTab("Search Function", SEARCHPanel);
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(this);
         this.setLayout(layout);
         layout.setHorizontalGroup(
@@ -599,6 +596,69 @@ public class GuiMain extends javax.swing.JPanel {
                 .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
         );
     }// </editor-fold>//GEN-END:initComponents
+
+    private void openEXISTED_DB_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openEXISTED_DB_BUTTONActionPerformed
+
+        loaded_integrated_files.clear();
+        String path_config = "";
+        String db_load_name = "";
+
+        Preferences pref = Preferences.userRoot();
+        String path = pref.get("DB_PATH", "");
+        JFileChooser chooser = new JFileChooser();
+        chooser.setDialogTitle("Wähle Datenbank Ordner aus");
+        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        chooser.setAcceptAllFileFilterUsed(false);
+        chooser.setCurrentDirectory(new File(path));
+        int result = chooser.showOpenDialog(null);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            pathLABEL.setText(chooser.getSelectedFile().getParent());
+            System.out.println(pathLABEL.getText());
+            File f = chooser.getCurrentDirectory();
+            db_load_name = chooser.getSelectedFile().getName();
+            pref.put("DB_PATH", f.getAbsolutePath());
+            Stream<Path> list;
+            try {
+                list = Files.list(Paths.get(f.getAbsolutePath()));
+                for (Object object : list.toArray()) {
+                    Path a = (Path) object;
+                    String filename = a.getFileName().toString();
+                    if (filename.equals(db_load_name)) {
+                        path_config = f.getAbsolutePath() + Tools.OSValidator() + db_load_name + Tools.OSValidator()
+                                + Properties.config_database_internal;
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+        }
+
+        field_db_name.setText(db_load_name);
+
+        try {
+            BufferedReader brr = new BufferedReader(new FileReader(new File(path_config)));
+            Iterator<String> iterator = brr.lines().iterator();
+            String last_line = "";
+            while (iterator.hasNext()) {
+                String next = iterator.next();
+                if (!next.equals("") && !next.startsWith("/") && !next.startsWith("\\")) {
+                    loaded_integrated_files.add(next);
+                }
+                last_line = next;
+            }
+            String path_df = last_line;
+            downloadLABEL.setText(path_df);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        GraphDatabaseFactory gf = new GraphDatabaseFactory();
+        path = pathLABEL.getText() + Tools.OSValidator() + field_db_name.getText();
+        System.out.println(db_path);
+        gdb = gf.newEmbeddedDatabase(new File(path));
+    }//GEN-LAST:event_openEXISTED_DB_BUTTONActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
 
@@ -617,7 +677,6 @@ public class GuiMain extends javax.swing.JPanel {
             pref.put("DOWNLOAD_PATH", f.getAbsolutePath());
         }
     }//GEN-LAST:event_jButton2ActionPerformed
-
 
     private void jButton5ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton5ActionPerformed
 
@@ -641,23 +700,112 @@ public class GuiMain extends javax.swing.JPanel {
         // TODO add your handling code here:
     }//GEN-LAST:event_field_db_nameActionPerformed
 
-    static String output_folder = "";
-    static String download_folder = "";
-    static String db_path = "";
-    static String db_name = "";
+    private void read_redun_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_read_redun_BUTTONActionPerformed
+        jTextArea1.setText("");
+        try {
+            RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
+            HashSet<Long> readFileRed = red_checker.readFileRed();
+            for (Long checkDouble : readFileRed) {
+                progress_AREA.append(checkDouble + "\n");
+            }
+            red_checker.removeDoubles(readFileRed);
 
-    boolean canada = true;
-    boolean usa = true;
-    boolean ycs = true;
+        } catch (IOException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_read_redun_BUTTONActionPerformed
 
-    ArrayList<String> files_usa = new ArrayList<>();
-    PreProcessorYCS_F pycs = null;
-    PreProcessorCanada_F pfff = null;
-    PreProcessorUS_F p_usa = new PreProcessorUS_F();
-    File f;
+    private void redundancyBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_redundancyBUTTONActionPerformed
+        try {
+            RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
+            red_checker.InitFileWriting();
+            HashSet<Long> checkDoubles = red_checker.checkDoubles();
+            progress_AREA.setText("...checking for redundancies...\n");
+            for (Long checkDouble : checkDoubles) {
+                progress_AREA.append(checkDouble + "\n");
+            }
+            red_checker.CloseFileWriting();
+        } catch (IOException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_redundancyBUTTONActionPerformed
 
-    static String folder_canada_after_extraction = "";
-    static HashSet<String> loaded_integrated_files = new HashSet<>();
+    private void deleteOverviewBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteOverviewBUTTONActionPerformed
+        dmd_o.clear();
+        overviewLIST.setModel(dmd_o);
+    }//GEN-LAST:event_deleteOverviewBUTTONActionPerformed
+
+    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
+        // DOWNLOADING...!
+        HashSet<String> downloaded_zips = new HashSet<>();
+        output_folder = pathLABEL.getText();
+        download_folder = downloadLABEL.getText();
+        db_name = field_db_name.getText();
+        db_path = output_folder + Tools.OSValidator() + db_name;
+        f = new File(db_path);
+        canada = false;
+        ycs = false;
+        usa = false;
+
+        ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+        int size = model.getSize();
+        for (int i = 0; i < size; i++) {
+            Parser_File_Overview elementAt = model.getElementAt(i);
+            ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+            for (Parser_File_Entry p_info : p_infos) {
+                String url = p_info.getUrl();
+                String d_file = download_folder + Tools.OSValidator()
+                        + p_info.getName() + ".zip";
+                if (p_info.getUrl().contains(Properties.canada_url_check)) {
+                    canada = true;
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                System.out.println("DOWNLOAD");
+                                String downloadFILE_ZIP = Tools.downloadFILE_ZIP(p_info.getDownload_url(), d_file);
+                            } catch (IOException ex) {
+                                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                            downloaded_zips.add(d_file);
+                        }
+                    });
+                } else if (p_info.getUrl().contains("info.mhra")) {
+                    ycs = true;
+                    pycs = new PreProcessorYCS_F(f, p_info.getUrl(),
+                            download_folder, output_folder);
+                    try {
+                        pycs.startPreProcessingAll();
+                        //                        pycs.closeDB();
+                    } catch (IOException ex) {
+                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    String kind_year = p_info.getName();
+                    if (!kind_year.equals("")) {
+                        usa = true;
+                        files_usa.add(kind_year.substring(2).toUpperCase());
+                        try {
+                            p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
+                            p_usa.extractFileAfterDownload(d_file, download_folder);
+                        } catch (IOException ex) {
+                            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        }
+
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                for (String downloaded_zip : downloaded_zips) {
+                    String unZipIt = Tools.unZipItCanada(downloaded_zip, download_folder);
+                    folder_canada_after_extraction = unZipIt;
+                }
+            }
+        });
+    }//GEN-LAST:event_jButton6ActionPerformed
 
     /**
      * Start integration.
@@ -673,61 +821,60 @@ public class GuiMain extends javax.swing.JPanel {
             f.mkdirs();
         }
 
-//        /**
-//         * Init File For later Updating that DB
-//         */
-//        File f_config = new File(db_path + Tools.OSValidator() + Properties.config_database_internal);
-//        if (!f_config.exists()) {
-//            try {
-//                f_config.createNewFile();
-//                FileWriter fw = new FileWriter(f_config);
-//                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-//                int size = model.getSize();
-//                for (int i = 0; i < size; i++) {
-//                    Parser_File_Overview elementAt = model.getElementAt(i);
-//                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-//                    for (Parser_File_Entry p_info : p_infos) {
-//                        String name = p_info.getName();
-//                        fw.write(name + "\n");
-//                        fw.flush();
-//                    }
-//                    fw.write("\n");
-//                    fw.flush();
-//                }
-//                fw.write(download_folder);
-//                fw.close();
-//            } catch (IOException ex) {
-//                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        } else {
-//            try {
-//                f_config.createNewFile();
-//                FileWriter fw = new FileWriter(f_config);
-//                for (String loaded_integrated_file : loaded_integrated_files) {
-//                    fw.write(loaded_integrated_file + "\n");
-//                    fw.flush();
-//                }
-//                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-//                int size = model.getSize();
-//                for (int i = 0; i < size; i++) {
-//                    Parser_File_Overview elementAt = model.getElementAt(i);
-//                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-//                    for (Parser_File_Entry p_info : p_infos) {
-//                        String name = p_info.getName();
-//                        fw.write(name + "\n");
-//                        fw.flush();
-//                    }
-//                    fw.write("\n");
-//                    fw.flush();
-//                }
-//                fw.write(download_folder);
-//                fw.close();
-//            } catch (IOException ex) {
-//                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//
-//        }
+        /**
+         * Init File For later Updating that DB
+         */
+        File f_config = new File(db_path + Tools.OSValidator() + Properties.config_database_internal);
+        if (!f_config.exists()) {
+            try {
+                f_config.createNewFile();
+                FileWriter fw = new FileWriter(f_config);
+                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+                int size = model.getSize();
+                for (int i = 0; i < size; i++) {
+                    Parser_File_Overview elementAt = model.getElementAt(i);
+                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+                    for (Parser_File_Entry p_info : p_infos) {
+                        String name = p_info.getName();
+                        fw.write(name + "\n");
+                        fw.flush();
+                    }
+                    fw.write("\n");
+                    fw.flush();
+                }
+                fw.write(download_folder);
+                fw.close();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else {
+            try {
+                f_config.createNewFile();
+                FileWriter fw = new FileWriter(f_config);
+                for (String loaded_integrated_file : loaded_integrated_files) {
+                    fw.write(loaded_integrated_file + "\n");
+                    fw.flush();
+                }
+                ListModel<Parser_File_Overview> model = overviewLIST.getModel();
+                int size = model.getSize();
+                for (int i = 0; i < size; i++) {
+                    Parser_File_Overview elementAt = model.getElementAt(i);
+                    ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
+                    for (Parser_File_Entry p_info : p_infos) {
+                        String name = p_info.getName();
+                        fw.write(name + "\n");
+                        fw.flush();
+                    }
+                    fw.write("\n");
+                    fw.flush();
+                }
+                fw.write(download_folder);
+                fw.close();
+            } catch (IOException ex) {
+                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
 
+        }
         if (canada && !usa && !ycs) {
             try {
                 pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
@@ -793,9 +940,7 @@ public class GuiMain extends javax.swing.JPanel {
             }
         }
 
-
     }//GEN-LAST:event_jButton4ActionPerformed
-
 
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
 
@@ -810,7 +955,6 @@ public class GuiMain extends javax.swing.JPanel {
         overviewLIST.setModel(dmd_o);
         filesLISTE.setModel(dmd_empty);
         dmd_as = new HashSet<>();
-
     }//GEN-LAST:event_jButton3ActionPerformed
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
@@ -845,171 +989,43 @@ public class GuiMain extends javax.swing.JPanel {
         parserItemChanged();
     }//GEN-LAST:event_jComboBox1ItemStateChanged
 
-    private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
-        // DOWNLOADING...!
-        HashSet<String> downloaded_zips = new HashSet<>();
-        output_folder = pathLABEL.getText();
-        download_folder = downloadLABEL.getText();
-        db_name = field_db_name.getText();
-        db_path = output_folder + Tools.OSValidator() + db_name;
-        f = new File(db_path);
-        canada = false;
-        ycs = false;
-        usa = false;
+    static String output_folder = "";
+    static String download_folder = "";
+    static String db_path = "";
+    static String db_name = "";
 
-        ListModel<Parser_File_Overview> model = overviewLIST.getModel();
-        int size = model.getSize();
-        for (int i = 0; i < size; i++) {
-            Parser_File_Overview elementAt = model.getElementAt(i);
-            ArrayList<Parser_File_Entry> p_infos = elementAt.getP_infos();
-            for (Parser_File_Entry p_info : p_infos) {
-                String url = p_info.getUrl();
-                String d_file = download_folder + Tools.OSValidator()
-                        + p_info.getName() + ".zip";
-                if (p_info.getUrl().contains(Properties.canada_url_check)) {
-                    canada = true;
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                System.out.println("DOWNLOAD");
-                                String downloadFILE_ZIP = Tools.downloadFILE_ZIP(p_info.getDownload_url(), d_file);
-                            } catch (IOException ex) {
-                                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                            }
-                            downloaded_zips.add(d_file);
-                        }
-                    });
-                } else if (p_info.getUrl().contains("info.mhra")) {
-                    ycs = true;
-                    pycs = new PreProcessorYCS_F(f, p_info.getUrl(),
-                            download_folder, output_folder);
-                    try {
-                        pycs.startPreProcessingAll();
-//                        pycs.closeDB();
-                    } catch (IOException ex) {
-                        Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                } else {
-                    String kind_year = p_info.getName();
-                    if (!kind_year.equals("")) {
-                        usa = true;
-                        files_usa.add(kind_year.substring(2).toUpperCase());
-                        try {
-                            p_usa.downloadFileToDestination(p_info.getUrl(), d_file);
-                            p_usa.extractFileAfterDownload(d_file, download_folder);
-                        } catch (IOException ex) {
-                            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
-                }
-            }
+    boolean canada = true;
+    boolean usa = true;
+    boolean ycs = true;
+
+    ArrayList<String> files_usa = new ArrayList<>();
+    PreProcessorYCS_F pycs = null;
+    PreProcessorCanada_F pfff = null;
+    PreProcessorUS_F p_usa = new PreProcessorUS_F();
+    File f;
+
+    static String folder_canada_after_extraction = "";
+    static HashSet<String> loaded_integrated_files = new HashSet<>();
+
+    DefaultComboBoxModel<String> searchComboBoxList = new DefaultComboBoxModel<>();
+    DefaultListModel<String> searchRESULTS = new DefaultListModel<>();
+    DefaultTableModel tableMODEL = new DefaultTableModel();
+
+    GraphDatabaseService gdb;
+
+    void setAutoComplToField(String choose_area) {
+        switch (choose_area) {
+            case "drugname":
+                System.out.println("D");
+                break;
+            case "indiaction":
+                System.out.println("I");
+                break;
+            case "reaction":
+                System.out.println("R");
+                break;
         }
-
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                for (String downloaded_zip : downloaded_zips) {
-                    String unZipIt = Tools.unZipItCanada(downloaded_zip, download_folder);
-                    folder_canada_after_extraction = unZipIt;
-                }
-            }
-        });
-
-    }//GEN-LAST:event_jButton6ActionPerformed
-
-    private void redundancyBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_redundancyBUTTONActionPerformed
-        try {
-            RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
-            red_checker.InitFileWriting();
-            HashSet<Long> checkDoubles = red_checker.checkDoubles();
-            progress_AREA.setText("...checking for redundancies...\n");
-            for (Long checkDouble : checkDoubles) {
-                progress_AREA.append(checkDouble + "\n");
-            }
-            red_checker.CloseFileWriting();
-        } catch (IOException ex) {
-            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_redundancyBUTTONActionPerformed
-
-    private void read_redun_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_read_redun_BUTTONActionPerformed
-        jTextArea1.setText("");
-        try {
-            RedundancyChecker red_checker = new RedundancyChecker(pathLABEL.getText(), field_db_name.getText(), jTextArea1);
-            HashSet<Long> readFileRed = red_checker.readFileRed();
-            for (Long checkDouble : readFileRed) {
-                progress_AREA.append(checkDouble + "\n");
-            }
-            red_checker.removeDoubles(readFileRed);
-
-        } catch (IOException ex) {
-            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_read_redun_BUTTONActionPerformed
-
-    private void deleteOverviewBUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteOverviewBUTTONActionPerformed
-        dmd_o.clear();
-        overviewLIST.setModel(dmd_o);
-    }//GEN-LAST:event_deleteOverviewBUTTONActionPerformed
-
-    private void openEXISTED_DB_BUTTONActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openEXISTED_DB_BUTTONActionPerformed
-
-        loaded_integrated_files.clear();
-        String path_config = "";
-        String db_load_name = "";
-
-        Preferences pref = Preferences.userRoot();
-        String path = pref.get("DB_PATH", "");
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Wähle Datenbank Ordner aus");
-        chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        chooser.setAcceptAllFileFilterUsed(false);
-        chooser.setCurrentDirectory(new File(path));
-        int result = chooser.showOpenDialog(null);
-
-        if (result == JFileChooser.APPROVE_OPTION) {
-            pathLABEL.setText(chooser.getSelectedFile().getParent());
-            System.out.println(pathLABEL.getText());
-            File f = chooser.getCurrentDirectory();
-            db_load_name = chooser.getSelectedFile().getName();
-            pref.put("DB_PATH", f.getAbsolutePath());
-            Stream<Path> list;
-            try {
-                list = Files.list(Paths.get(f.getAbsolutePath()));
-                for (Object object : list.toArray()) {
-                    Path a = (Path) object;
-                    String filename = a.getFileName().toString();
-                    if (filename.equals(db_load_name)) {
-                        path_config = f.getAbsolutePath() + Tools.OSValidator() + db_load_name + Tools.OSValidator()
-                                + Properties.config_database_internal;
-                    }
-                }
-            } catch (IOException ex) {
-                Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        }
-
-        field_db_name.setText(db_load_name);
-
-        try {
-            BufferedReader brr = new BufferedReader(new FileReader(new File(path_config)));
-            Iterator<String> iterator = brr.lines().iterator();
-            String last_line = "";
-            while (iterator.hasNext()) {
-                String next = iterator.next();
-                if (!next.equals("") && !next.startsWith("/") && !next.startsWith("\\")) {
-                    loaded_integrated_files.add(next);
-                }
-                last_line = next;
-            }
-            String path_df = last_line;
-            downloadLABEL.setText(path_df);
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_openEXISTED_DB_BUTTONActionPerformed
+    }
 
     /**
      * SwingWorker for Integrating Canada Data Set.
@@ -1164,7 +1180,7 @@ public class GuiMain extends javax.swing.JPanel {
 
             String next = files_usa.get(0);
             System.out.println(next);
-            
+
             SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
                     + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
 
@@ -1250,19 +1266,18 @@ public class GuiMain extends javax.swing.JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel NEWPanel;
-    private javax.swing.JPanel SEARCHPanel;
     private javax.swing.JButton deleteOverviewBUTTON;
     private javax.swing.JTextArea descriptionAREA;
     private javax.swing.JLabel downloadLABEL;
     private javax.swing.JTextField field_db_name;
-    public javax.swing.JList<Parser_File_Entry> filesLISTE;
+    private javax.swing.JList<Parser_File_Entry> filesLISTE;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
-    public javax.swing.JComboBox<Parser_Info> jComboBox1;
+    private javax.swing.JComboBox<Parser_Info> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -1283,11 +1298,11 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JLabel labelSOURCE;
     private javax.swing.JButton openEXISTED_DB_BUTTON;
-    public javax.swing.JList<Parser_File_Overview> overviewLIST;
+    private javax.swing.JList<Parser_File_Overview> overviewLIST;
     private javax.swing.JLabel pathLABEL;
     private javax.swing.JTextArea progress_AREA;
     private javax.swing.JLabel progress_Info;
-    public static javax.swing.JLabel progress_STATE;
+    private javax.swing.JLabel progress_STATE;
     private javax.swing.JLabel progress_STEP;
     private javax.swing.JButton read_redun_BUTTON;
     private javax.swing.JButton redundancyBUTTON;

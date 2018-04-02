@@ -13,6 +13,6 @@ public final class Main implements Properties {
 
         GuiParentMain gpm = new GuiParentMain("Im Test");
         ParserBoxInstanzFirst pbif = new ParserBoxInstanzFirst();
-        
+
     }
 }

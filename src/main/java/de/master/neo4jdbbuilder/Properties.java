@@ -18,6 +18,7 @@ public interface Properties {
     String information_not_available = "n/a";
     String basic_path_database = "database";
     String UNIQUE_SOURCE = "unique_source";
+    String UNQIUE_DRUGBANK_ID = "db_id";
     String AdverseReactionName = "adverse reaction";
     String db_name_main = "DB_MAIN";
     String präfix_ycs = "YCS_";

@@ -17,6 +17,7 @@ public interface Properties {
     String basic_path_parser_settings = "parser/parser_info.txt";
     String information_not_available = "n/a";
     String basic_path_database = "database";
+    String basic_file_db_id = "drugbank_id.txt";
     String UNIQUE_SOURCE = "unique_source";
     String UNQIUE_DRUGBANK_ID = "db_id";
     String AdverseReactionName = "adverse reaction";

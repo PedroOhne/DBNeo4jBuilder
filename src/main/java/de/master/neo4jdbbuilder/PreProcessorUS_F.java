@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -30,6 +31,8 @@ import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 public final class PreProcessorUS_F implements Properties {
 
     GraphDatabaseService db;
+
+    static ConcurrentHashMap<String, String> db_ids;
 
     static HashSet<USgenerellNode> alls = new HashSet<>();
     static HashMap<String, ArrayList<USadvancedNode>> omegaDrugs_FINAL = new HashMap<>();
@@ -79,6 +82,10 @@ public final class PreProcessorUS_F implements Properties {
         String symb = Tools.OSValidator();
         String rel_path = basic_path_database + symb + basic_path_us + symb;
         db = dbFactory.newEmbeddedDatabase(f);
+    }
+    
+    void setDB_ID(ConcurrentHashMap<String,String> mp){
+        this.db_ids = mp;
     }
 
     public void PreProcessorUS_F_14Q2(SortedSet<String> files_names, int option) throws IOException, InterruptedException {
@@ -186,7 +193,7 @@ public final class PreProcessorUS_F implements Properties {
     static int max;
 
     public String ProcessOneNode(USgenerellNode node) {
-        USThread_F_14Q2 thread = new USThread_F_14Q2(node, alls_config_props, db);
+        USThread_F_14Q2 thread = new USThread_F_14Q2(node, alls_config_props, db, db_ids);
         thread.run();
         counter++;
         return counter + "/" + max + "\t\t" + Tools.round(counter, max, 3) + "  %";

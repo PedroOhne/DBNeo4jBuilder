@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,13 +30,13 @@ public class DrugBankConfigurator {
     Matcher m;
     Matcher m_name;
 
-    HashMap<String, String> readDatabank(String path_db_id) throws FileNotFoundException {
-        HashMap<String, String> mp = new HashMap<>();
+    public static ConcurrentHashMap<String, String> readDatabank(String path_db_id) throws FileNotFoundException {
+        ConcurrentHashMap<String, String> mp = new ConcurrentHashMap<>();
         BufferedReader bfr = new BufferedReader(new FileReader(path_db_id));
         Iterator<String> iterator = bfr.lines().iterator();
         while (iterator.hasNext()) {
             String[] split = iterator.next().split("\\$");
-            mp.put(split[0].toUpperCase(), split[1]);
+                mp.put(split[0].toUpperCase(), split[1]);
         }
         return mp;
     }

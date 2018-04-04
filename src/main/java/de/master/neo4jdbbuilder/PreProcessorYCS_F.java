@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -52,6 +53,7 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
     HashMap<String, Integer> get_reactions;
     HashMap<String, Integer> get_outcome;
     static HashMap<String, Long> patient_for_link = new HashMap<>();
+    static ConcurrentHashMap<String, String> mp_db_id;
 
     String regex_summary_N = "(N{1})(,{1})(.*)";
     String regex_summary_Y = "(Y{1})(,{1})(.*)";
@@ -82,6 +84,10 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
         this.db_file = f;
         this.download_folder = download_folder;
         this.output_folder = output_folder;
+    }
+
+    void setDB_ID(ConcurrentHashMap mp) {
+        this.mp_db_id = mp;
     }
 
     HashMap<String, HashSet<String>> startPreProcessingAll() throws IOException {
@@ -199,7 +205,17 @@ public class PreProcessorYCS_F extends YcsSuperInstanz_F {
                 for (Map.Entry<String, Integer> entry : get_drug.entrySet()) {
                     switch (entry.getValue()) {
                         case -2:
-                            node_drug.setProperty(entry.getKey(), drug_name.toUpperCase());
+                            String dnam = drug_name.toUpperCase();
+                            node_drug.setProperty(entry.getKey(), dnam);
+                            if (mp_db_id.containsKey(dnam)) {
+                                String db_id = mp_db_id.get(dnam);
+                                if (db_id != null) {
+                                    node_drug.setProperty(Properties.UNQIUE_DRUGBANK_ID, db_id);
+                                }
+                            } else {
+                                node_drug.setProperty(Properties.UNQIUE_DRUGBANK_ID, "");
+                            }
+
                             break;
                         case -1:
                             node_drug.setProperty(entry.getKey(), "n/a");

@@ -17,13 +17,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
@@ -807,6 +806,8 @@ public class GuiMain extends javax.swing.JPanel {
         });
     }//GEN-LAST:event_jButton6ActionPerformed
 
+    static ConcurrentHashMap<String, String> mp;
+
     /**
      * Start integration.
      */
@@ -820,6 +821,15 @@ public class GuiMain extends javax.swing.JPanel {
         if (!f.exists()) {
             f.mkdirs();
         }
+
+        DrugBankConfigurator dbc = new DrugBankConfigurator();
+        String db_id_path = Tools.CurrenDirectory() + Tools.OSValidator() + Properties.basic_path_database + Tools.OSValidator() + Properties.basic_file_db_id;
+        try {
+            mp = dbc.readDatabank(db_id_path);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        System.out.println(mp.size());
 
         /**
          * Init File For later Updating that DB
@@ -877,7 +887,9 @@ public class GuiMain extends javax.swing.JPanel {
         }
         if (canada && !usa && !ycs) {
             try {
+                System.out.println("STARTING");
                 pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                pfff.setDB_IDs(mp);
                 WorkerCAN workerCan = new WorkerCAN(pfff, f);
                 workerCan.execute();
             } catch (IOException ex) {
@@ -886,7 +898,9 @@ public class GuiMain extends javax.swing.JPanel {
         } else if (canada && usa && !ycs) {
             try {
                 pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                pfff.setDB_IDs(mp);
                 WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+                w_usa.setDBID(mp);
                 WorkerCAN w_canaa = new WorkerCAN(pfff, f, null, w_usa);
                 w_canaa.execute();
             } catch (IOException ex) {
@@ -895,7 +909,10 @@ public class GuiMain extends javax.swing.JPanel {
         } else if (canada && usa && ycs) {
             try {
                 pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                pfff.setDB_IDs(mp);
                 WorkerUSA w_ussa = new WorkerUSA(p_usa, files_usa, f);
+                w_ussa.setDBID(mp);
+                pycs.setDB_ID(mp);
                 WorkerCAN w_canaa = new WorkerCAN(pfff, f, pycs, w_ussa);
                 w_canaa.execute();
             } catch (IOException ex) {
@@ -904,6 +921,8 @@ public class GuiMain extends javax.swing.JPanel {
         } else if (canada && !usa && ycs) {
             try {
                 pfff = new PreProcessorCanada_F(download_folder, folder_canada_after_extraction);
+                pfff.setDB_IDs(mp);
+                pycs.setDB_ID(mp);
                 WorkerCAN workerCan = new WorkerCAN(pfff, f, pycs);
                 workerCan.execute();
             } catch (IOException ex) {
@@ -912,6 +931,7 @@ public class GuiMain extends javax.swing.JPanel {
         } else if (!canada && usa && !ycs) {
             try {
                 WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+                w_usa.setDBID(mp);
                 w_usa.execute();
             } catch (IOException ex) {
                 Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
@@ -922,6 +942,7 @@ public class GuiMain extends javax.swing.JPanel {
                 public void run() {
                     try {
                         System.out.println("Start..");
+                        pycs.setDB_ID(mp);
                         WorkerYCS w_ycs = new WorkerYCS(pycs, null);
                         w_ycs.execute();
                     } catch (IOException ex) {
@@ -933,6 +954,7 @@ public class GuiMain extends javax.swing.JPanel {
         } else if (!canada && usa && ycs) {
             try {
                 WorkerUSA w_usa = new WorkerUSA(p_usa, files_usa, f);
+                w_usa.setDBID(mp);
                 WorkerYCS w_ycs = new WorkerYCS(pycs, w_usa);
                 w_ycs.execute();
             } catch (IOException ex) {
@@ -1012,20 +1034,6 @@ public class GuiMain extends javax.swing.JPanel {
     DefaultTableModel tableMODEL = new DefaultTableModel();
 
     GraphDatabaseService gdb;
-
-    void setAutoComplToField(String choose_area) {
-        switch (choose_area) {
-            case "drugname":
-                System.out.println("D");
-                break;
-            case "indiaction":
-                System.out.println("I");
-                break;
-            case "reaction":
-                System.out.println("R");
-                break;
-        }
-    }
 
     /**
      * SwingWorker for Integrating Canada Data Set.
@@ -1159,7 +1167,12 @@ public class GuiMain extends javax.swing.JPanel {
         PreProcessorUS_F p_usa;
         PreProcessorCanada_F p_cana;
         ArrayList<String> files_usa;
+        ConcurrentHashMap<String,String> mp_db_id;
         File f;
+        
+        void setDBID(ConcurrentHashMap<String,String> mp){
+            this.mp_db_id = mp;
+        }
 
         public WorkerUSA(PreProcessorUS_F a, ArrayList<String> filess, File f, PreProcessorCanada_F p_c) throws IOException {
             this.p_usa = a;
@@ -1183,6 +1196,8 @@ public class GuiMain extends javax.swing.JPanel {
 
             SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
                     + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
+            
+            p_usa.setDB_ID(mp);
 
             if (next.equals("14Q2")) {
                 p_usa.initFile(f);

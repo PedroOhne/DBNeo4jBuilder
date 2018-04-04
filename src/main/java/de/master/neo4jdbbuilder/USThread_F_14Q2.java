@@ -10,6 +10,7 @@ import static de.master.neo4jdbbuilder.Properties.unique_id_usa;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -28,13 +29,16 @@ class USThread_F_14Q2 implements Runnable {
     String regex = "(.+)(\\.|\\,|[\\/].*[\\/])$";
     Pattern pattern_regex = Pattern.compile(regex);
     Matcher m;
+    ConcurrentHashMap<String, String> mp_db_id;
 
     private HashMap<String, HashMap<String, Integer>> generall_properties;
 
-    public USThread_F_14Q2(USgenerellNode b_n, HashMap<String, HashMap<String, Integer>> hm, GraphDatabaseService db) {
+    public USThread_F_14Q2(USgenerellNode b_n, HashMap<String, HashMap<String, Integer>> hm, GraphDatabaseService db,
+            ConcurrentHashMap<String, String> mp) {
         this.b_n = b_n;
         this.generall_properties = hm;
         this.db_s = db;
+        this.mp_db_id = mp;
     }
 
     @Override
@@ -157,6 +161,7 @@ class USThread_F_14Q2 implements Runnable {
             } else {
             }
 
+            String db_id = "";
             ArrayList<USadvancedNode> drugs = b_n.getDrugs();
             for (USadvancedNode drug : drugs) {
 
@@ -173,9 +178,18 @@ class USThread_F_14Q2 implements Runnable {
                 String newProperty = drugSPLIT[4].toUpperCase();
                 m = pattern_regex.matcher(newProperty);
                 if (m.find()) {
-                    newProperty = m.group(1);
+                    newProperty = m.group(1).toUpperCase();
                     drugNODE.removeProperty("drugname");
                     drugNODE.setProperty("drugname", newProperty);
+                }
+
+                if (mp_db_id.containsKey(newProperty)) {
+                    db_id = mp_db_id.get(newProperty);
+                    if (db_id != null) {
+                        drugNODE.setProperty(Properties.UNQIUE_DRUGBANK_ID, db_id);
+                    }
+                } else {
+                    drugNODE.setProperty(Properties.UNQIUE_DRUGBANK_ID, "");
                 }
 
                 String convertFreqUSAtoStandard = Tools.convertFreqUSAtoStandard(drugSPLIT[drugSPLIT.length - 1]);

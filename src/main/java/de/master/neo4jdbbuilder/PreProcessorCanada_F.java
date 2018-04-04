@@ -17,13 +17,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.ResourceIterator;
-import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
 /**
@@ -64,11 +62,17 @@ public final class PreProcessorCanada_F implements Properties {
 
     static String download_paath = "";
     static String unzipped_file = "";
-
+    
+    static ConcurrentHashMap<String,String> db_ids;
+    
     public PreProcessorCanada_F(String download_path, String unzipped_folder) throws IOException {
         my_props = createPropertyMap();
         this.download_paath = download_path;
         this.unzipped_file = unzipped_folder;
+    }
+    
+    public void setDB_IDs(ConcurrentHashMap<String, String> mp){
+        this.db_ids = mp;
     }
 
     public void clearAllMaps() {
@@ -477,7 +481,7 @@ public final class PreProcessorCanada_F implements Properties {
     }
 
     public String processOneNode(CanadaNode c_node) {
-        CanadaThread_F can_thread = new CanadaThread_F(c_node, my_props, db);
+        CanadaThread_F can_thread = new CanadaThread_F(c_node, my_props, db, db_ids);
         can_thread.run();
         counter_process++;
         return counter_process + "/" + counter_max + "\t\t" + Tools.round(counter_process, counter_max, 3) + " %";
@@ -492,7 +496,7 @@ public final class PreProcessorCanada_F implements Properties {
         while (iterator.hasNext()) {
 //            Tools.startTime();
             CanadaNode canaNODE = iterator.next();
-            CanadaThread_F c = new CanadaThread_F(canaNODE, my_props, db);
+            CanadaThread_F c = new CanadaThread_F(canaNODE, my_props, db, db_ids);
             c.run();
 //            Tools.printPassedTime(canaNODE.getAer_key());
         }
@@ -609,67 +613,6 @@ public final class PreProcessorCanada_F implements Properties {
             hm.put(split_after[0], split_after);
         }
         bf.close();
-    }
-
-    /**
-     * Section -> Methods/Functions which are not needed anymore.
-     */
-    public void ConnectDRUGproducts_to_ReportDRUG() {
-        // LONG..ID..Indication   <->   DRUG_PRODCUT_ID ....  
-        // First Step.hj
-        HashMap<Long, String> first_unordered_map = new HashMap<>();
-        try (Transaction tx = db.beginTx()) {
-            ResourceIterator<Node> all_indications = db.findNodes(Entities.Indication);
-            while (all_indications.hasNext()) {
-                Node n = all_indications.next();
-                Long key = n.getId();
-                String drug_product_prop = n.getProperty("drug_product_id").toString();
-                first_unordered_map.put(key, drug_product_prop);
-            }
-            tx.success();
-        }
-
-        // Second Step.
-        HashMap<String, HashSet<Long>> first_ordered_map = new HashMap<>();
-        for (Map.Entry<Long, String> entry : first_unordered_map.entrySet()) {
-            String drug_product_id = entry.getValue();
-            Long key_id_indication_node = entry.getKey();
-            if (first_ordered_map.containsKey(drug_product_id)) {
-                HashSet<Long> get_set = first_ordered_map.get(drug_product_id);
-                get_set.add(key_id_indication_node);
-                first_ordered_map.put(drug_product_id, get_set);
-            } else {
-                HashSet<Long> new_set = new HashSet<>();
-                new_set.add(key_id_indication_node);
-                first_ordered_map.put(drug_product_id, new_set);
-            }
-        }
-
-        // Third Step. Connect Indication Nodes with DrugProduct.
-        int stopper = 0;
-        try (Transaction tx = db.beginTx()) {
-            for (Map.Entry<String, HashSet<Long>> entry : first_ordered_map.entrySet()) {
-                Tools.startTime();
-                stopper++;
-                Node drug_product_node = db.findNode(Entities.DrugProduct, "drug_product_id", entry.getKey());
-                if (drug_product_node instanceof Node) {
-                    for (Long long_id_indication : entry.getValue()) {
-                        Node indi = db.getNodeById(long_id_indication);
-                        indi.createRelationshipTo(drug_product_node, EntitiesRelationships.INDICATION_PRODUCT);
-                    }
-                } else {
-                    System.out.println("No Node for: " + entry.getKey());
-                }
-                if (stopper % 5000 == 0) {
-                    tx.success();
-                    db.beginTx();
-                }
-                Tools.printPassedTime(String.valueOf(entry.getValue().size()));
-            }
-            tx.success();
-        }
-
-        db.shutdown();
     }
 
 }

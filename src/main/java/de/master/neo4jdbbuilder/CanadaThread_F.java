@@ -10,6 +10,7 @@ import static de.master.neo4jdbbuilder.Properties.unique_id_canada;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.neo4j.graphdb.GraphDatabaseService;
@@ -29,11 +30,14 @@ class CanadaThread_F implements Runnable {
     String regex = "(.+)(\\.|\\,|[\\/].*[\\/])$";
     Pattern pattern_regex = Pattern.compile(regex);
     Matcher m;
+    ConcurrentHashMap<String, String> mp_db_id;
 
-    public CanadaThread_F(CanadaNode c_n, HashMap<String, HashMap<String, Integer>> props, GraphDatabaseService db) {
+    public CanadaThread_F(CanadaNode c_n, HashMap<String, HashMap<String, Integer>> props, GraphDatabaseService db,
+            ConcurrentHashMap<String, String> mp) {
         this.cn = c_n;
         this.gdb = db;
         this.configs = props;
+        this.mp_db_id = mp;
     }
 
     @Override
@@ -217,6 +221,8 @@ class CanadaThread_F implements Runnable {
                     }
 
                     String value_to_set = "";
+                    String db_id = "";
+
                     for (Map.Entry<String, Integer> entry : all_drug_attributs.entrySet()) {
                         if (entry.getValue() instanceof Integer) {
                             String value = drugSPLIT[entry.getValue()];
@@ -229,6 +235,14 @@ class CanadaThread_F implements Runnable {
                                     value_to_set = Tools.convertFreqUnitToStandard(value);
                                     break;
                                 case 3:
+                                    if (mp_db_id.containsKey(value_to_set.toUpperCase())) {
+                                        db_id = mp_db_id.get(value_to_set);
+                                        if (db_id != null) {
+                                            drugNODE.setProperty(Properties.UNQIUE_DRUGBANK_ID, db_id);
+                                        }
+                                    } else {
+                                        drugNODE.setProperty(Properties.UNQIUE_DRUGBANK_ID, "");
+                                    }
                                     /**
                                      * fix of weird drugnames. Like
                                      * "MULTIVITAMIN /00097801/"

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -414,15 +415,15 @@ public class GuiMain extends javax.swing.JPanel {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel5Layout.createSequentialGroup()
-                        .addComponent(redundancyBUTTON)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(read_redun_BUTTON))
-                    .addGroup(jPanel5Layout.createSequentialGroup()
                         .addComponent(jScrollPane5, javax.swing.GroupLayout.PREFERRED_SIZE, 488, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel5Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(progress_STATE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addComponent(progress_STEP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                            .addComponent(progress_STEP, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                    .addGroup(jPanel5Layout.createSequentialGroup()
+                        .addComponent(redundancyBUTTON, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(read_redun_BUTTON)))
                 .addContainerGap())
         );
         jPanel5Layout.setVerticalGroup(
@@ -633,7 +634,8 @@ public class GuiMain extends javax.swing.JPanel {
             }
 
         }
-
+        
+        
         field_db_name.setText(db_load_name);
 
         try {
@@ -649,14 +651,17 @@ public class GuiMain extends javax.swing.JPanel {
             }
             String path_df = last_line;
             downloadLABEL.setText(path_df);
+            brr.close();
         } catch (FileNotFoundException ex) {
+            Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
             Logger.getLogger(GuiMain.class.getName()).log(Level.SEVERE, null, ex);
         }
 
         GraphDatabaseFactory gf = new GraphDatabaseFactory();
         path = pathLABEL.getText() + Tools.OSValidator() + field_db_name.getText();
-        System.out.println(db_path);
         gdb = gf.newEmbeddedDatabase(new File(path));
+        gdb.shutdown();
     }//GEN-LAST:event_openEXISTED_DB_BUTTONActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -1167,10 +1172,10 @@ public class GuiMain extends javax.swing.JPanel {
         PreProcessorUS_F p_usa;
         PreProcessorCanada_F p_cana;
         ArrayList<String> files_usa;
-        ConcurrentHashMap<String,String> mp_db_id;
+        ConcurrentHashMap<String, String> mp_db_id;
         File f;
-        
-        void setDBID(ConcurrentHashMap<String,String> mp){
+
+        void setDBID(ConcurrentHashMap<String, String> mp) {
             this.mp_db_id = mp;
         }
 
@@ -1196,7 +1201,7 @@ public class GuiMain extends javax.swing.JPanel {
 
             SortedSet<String> initializePathsAfterDownload = p_usa.initializePathsAfterDownload(download_folder
                     + Tools.OSValidator() + "ascii" + Tools.OSValidator(), next);
-            
+
             p_usa.setDB_ID(mp);
 
             if (next.equals("14Q2")) {
@@ -1285,14 +1290,14 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JTextArea descriptionAREA;
     private javax.swing.JLabel downloadLABEL;
     private javax.swing.JTextField field_db_name;
-    private javax.swing.JList<Parser_File_Entry> filesLISTE;
+    public javax.swing.JList<Parser_File_Entry> filesLISTE;
     private javax.swing.JButton jButton1;
     private javax.swing.JButton jButton2;
     private javax.swing.JButton jButton3;
     private javax.swing.JButton jButton4;
     private javax.swing.JButton jButton5;
     private javax.swing.JButton jButton6;
-    private javax.swing.JComboBox<Parser_Info> jComboBox1;
+    public javax.swing.JComboBox<Parser_Info> jComboBox1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
@@ -1313,11 +1318,11 @@ public class GuiMain extends javax.swing.JPanel {
     private javax.swing.JTextArea jTextArea1;
     private javax.swing.JLabel labelSOURCE;
     private javax.swing.JButton openEXISTED_DB_BUTTON;
-    private javax.swing.JList<Parser_File_Overview> overviewLIST;
+    public javax.swing.JList<Parser_File_Overview> overviewLIST;
     private javax.swing.JLabel pathLABEL;
     private javax.swing.JTextArea progress_AREA;
     private javax.swing.JLabel progress_Info;
-    private javax.swing.JLabel progress_STATE;
+    public static javax.swing.JLabel progress_STATE;
     private javax.swing.JLabel progress_STEP;
     private javax.swing.JButton read_redun_BUTTON;
     private javax.swing.JButton redundancyBUTTON;

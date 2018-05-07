@@ -11,11 +11,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.JTextArea;
-import javax.swing.SwingWorker;
+import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -34,7 +36,6 @@ public class RedundancyChecker {
     String redundant_file;
     JTextArea j_area;
     GraphDatabaseService db;
-    R_Worker rw;
 
     public RedundancyChecker(String databasee, String name_db) {
 
@@ -44,14 +45,7 @@ public class RedundancyChecker {
         this.database = databasee;
         this.database_name = name_db;
         this.j_area = area;
-        R_Worker rww = new R_Worker(j_area, database, database_name);
-        this.rw = rww;
         this.redundant_file = database + Tools.OSValidator() + Properties.config_redundancy_file;
-    }
-
-    public void executeWorker() {
-        InitFileWriting();
-        this.rw.execute();
     }
 
     public HashSet<Long> readFileRed() throws FileNotFoundException {
@@ -206,46 +200,143 @@ public class RedundancyChecker {
 
     }
 
-    public class R_Worker extends SwingWorker<String, String> {
+    String checkFollowUpRecords() throws IOException {
 
-        JTextArea jarea;
-        String database_path;
-        String database_name;
-        HashSet<Long> all_redy = new HashSet<>();
-        HashSet<Long> all_uniq = new HashSet<>();
+        Object uniq = "USA";
+        int big_size = 0;
+        ConcurrentHashMap<Object, HashMap<Integer, Long>> follow_up_reports = new ConcurrentHashMap<>();
 
-        public R_Worker(JTextArea a, String path, String name) throws IOException {
-            this.jarea = a;
-            this.database_name = name;
-            this.database_path = path;
-        }
-
-        @Override
-        protected String doInBackground() throws Exception {
-
-            try (Transaction tx = db.beginTx();) {
-                ResourceIterator<Node> findNodes = db.findNodes(Entities.Patient);
-                while (findNodes.hasNext()) {
-                    Node next = findNodes.next();
-                    Object property = next.getProperty("primaryID");
-                    String y = property.toString();
-                    if (all_uniq.contains(y)) {
-                        all_redy.add(next.getId());
-                        publish(y);
+        try (Transaction tx = db.beginTx()) {
+            ResourceIterator<Node> findNodes = db.findNodes(Entities.Report, "unique_source", "USA");
+            Iterator<Node> iterator = findNodes.stream().iterator();
+            while (iterator.hasNext()) {
+                Node report = iterator.next();
+                Long id_intern = report.getId();
+                Object property = report.getProperty(Properties.UNIQUE_SOURCE);
+                Object case_id_ = report.getProperty("caseID");
+                String caseV = report.getProperty("caseversion").toString();
+                if (property.equals(uniq)) {
+                    if (!follow_up_reports.containsKey(case_id_)) {
+                        HashMap<Integer, Long> primes = new HashMap<>();
+                        int parseInt = Integer.parseInt(caseV);
+                        primes.put(parseInt, id_intern);
+                        follow_up_reports.put(case_id_, primes);
                     } else {
-                        all_uniq.add(next.getId());
+                        HashMap<Integer, Long> get = follow_up_reports.get(case_id_);
+                        int parseInt = Integer.parseInt(caseV);
+                        get.put(parseInt, id_intern);
+                        follow_up_reports.put(case_id_, get);
                     }
                 }
-                tx.success();
+                big_size++;
             }
-            CloseFileWriting();
-            return null;
+            tx.success();
+
+            System.out.println("before: " + big_size);
+            
+            for (Map.Entry<Object, HashMap<Integer, Long>> entry : follow_up_reports.entrySet()) {
+                HashMap<Integer, Long> value_all = entry.getValue();
+                int size = value_all.size();
+
+                if (size > 1) {
+                    int max = 0;
+                    for (Map.Entry<Integer, Long> entry1 : value_all.entrySet()) {
+                        if (entry1.getKey() >= max) {
+                            max = entry1.getKey();
+                        }
+                    }
+                    entry.getValue().remove(max);
+                    for (Map.Entry<Integer, Long> entry1 : value_all.entrySet()) {
+                        deleteNodeAndSubgraph(db, entry1.getValue());
+                    }
+                } else {
+                    follow_up_reports.remove(entry.getKey());
+                }
+            }
+        }
+        return "" + follow_up_reports.size();
+    }
+
+    public void deleteFUreports(HashSet<HashMap<Integer, Long>> follow_up_reports) {
+
+        for (HashMap<Integer, Long> entry : follow_up_reports) {
+            for (Long value : entry.values()) {
+                deleteNodeAndSubgraph(db, value);
+            }
         }
 
-        @Override
-        protected void process(List<String> item) {
-            //This updates the UI
-            jarea.setText(item.get(item.size() - 1) + "\n");
+    }
+
+    public void deleteNodeAndSubgraph(GraphDatabaseService db, Long id) {
+
+        HashSet<Relationship> all_rels = new HashSet<>();
+        HashSet<Node> all_nodes = new HashSet<>();
+
+        try (Transaction tx = db.beginTx()) {
+            Node report_node = db.getNodeById(id);
+            Iterator<Relationship> Provides_SpR = report_node.getRelationships(EntitiesRelationships.PROVIDES_SpR).iterator();
+            all_nodes.add(report_node);
+
+            while (Provides_SpR.hasNext()) {
+                Relationship next = Provides_SpR.next();
+                if (next instanceof Relationship) {
+                    all_rels.add(next);
+                    if (next.getStartNode() instanceof Node) {
+                        Node sourceNode = next.getStartNode();
+                        all_nodes.add(sourceNode);
+                    }
+                }
+            }
+
+            Relationship DESCRIBES_RdP = report_node.getSingleRelationship(EntitiesRelationships.DESCRIBES_RdP, Direction.OUTGOING);
+            if (DESCRIBES_RdP instanceof Relationship) {
+                all_rels.add(DESCRIBES_RdP);
+                Node patientNODE = DESCRIBES_RdP.getEndNode();
+                if (patientNODE instanceof Node) {
+                    Iterator<Relationship> TAKES_PtD = patientNODE.getRelationships(EntitiesRelationships.TAKES_PtD).iterator();
+                    while (TAKES_PtD.hasNext()) {
+                        Relationship TAKES_PTD = TAKES_PtD.next();
+                        Node drugNODE = TAKES_PTD.getEndNode();
+                        Iterator<Relationship> iterator = drugNODE.getRelationships(Direction.OUTGOING).iterator();
+                        while (iterator.hasNext()) {
+                            Relationship next = iterator.next();
+                            if (next instanceof Relationship) {
+                                Node indiNODE = next.getEndNode();
+                                all_nodes.add(indiNODE);
+                                all_rels.add(next);
+                            }
+                        }
+
+                        all_rels.add(TAKES_PTD);
+                        all_nodes.add(drugNODE);
+                    }
+
+                    Relationship HAS_PhO = patientNODE.getSingleRelationship(EntitiesRelationships.HAS_PhO, Direction.OUTGOING);
+                    if (HAS_PhO instanceof Relationship) {
+                        Node outcNODE = HAS_PhO.getEndNode();
+                        all_nodes.add(outcNODE);
+                        all_rels.add(HAS_PhO);
+                    }
+
+                    Iterator<Relationship> PRESENTS_PpR = patientNODE.getRelationships(EntitiesRelationships.PRESENTS_PpR).iterator();
+                    while (PRESENTS_PpR.hasNext()) {
+                        Relationship PRESENTS_PPR = PRESENTS_PpR.next();
+                        Node reacNODE = PRESENTS_PPR.getEndNode();
+                        all_nodes.add(reacNODE);
+                        all_rels.add(PRESENTS_PPR);
+                    }
+                }
+            }
+
+            all_rels.stream().filter((all_rel) -> (all_rel instanceof Relationship)).forEachOrdered((all_rel) -> {
+                all_rel.delete();
+            });
+
+            all_nodes.stream().filter((all_node) -> (all_node instanceof Node)).forEachOrdered((all_node) -> {
+                all_node.delete();
+            });
+
+            tx.success();
         }
     }
 

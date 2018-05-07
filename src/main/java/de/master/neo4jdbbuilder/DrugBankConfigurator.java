@@ -30,13 +30,13 @@ public class DrugBankConfigurator {
     Matcher m;
     Matcher m_name;
 
-    public static ConcurrentHashMap<String, String> readDatabank(String path_db_id) throws FileNotFoundException {
+    public ConcurrentHashMap<String, String> readDatabank(String path_db_id) throws FileNotFoundException {
         ConcurrentHashMap<String, String> mp = new ConcurrentHashMap<>();
         BufferedReader bfr = new BufferedReader(new FileReader(path_db_id));
         Iterator<String> iterator = bfr.lines().iterator();
         while (iterator.hasNext()) {
             String[] split = iterator.next().split("\\$");
-                mp.put(split[0].toUpperCase(), split[1]);
+            mp.put(split[0].toUpperCase(), split[1]);
         }
         return mp;
     }
